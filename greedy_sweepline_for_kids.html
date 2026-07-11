@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>演算法教學重點：貪心、掃描線、分治、動態規劃</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+<style>
+  :root{
+    --bg:#fdf6ec;
+    --card:#ffffff;
+    --accent:#ff6b6b;
+    --accent2:#4ecdc4;
+    --accent3:#ffd166;
+    --text:#333;
+    --muted:#777;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:"Microsoft JhengHei","PingFang TC","Helvetica Neue",Arial,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    line-height:1.7;
+  }
+  header{
+    background:linear-gradient(135deg,#ff9a8b,#ff6b6b 40%,#ffd166);
+    color:#fff;
+    padding:36px 20px 26px;
+    text-align:center;
+  }
+  header h1{
+    margin:0 0 10px;
+    font-size:2em;
+  }
+  header p{
+    margin:0;
+    font-size:1.05em;
+    opacity:.95;
+  }
+
+  /* Topic tab nav */
+  nav.topics{
+    position:sticky;
+    top:0;
+    z-index:50;
+    background:#ffffff;
+    box-shadow:0 3px 10px rgba(0,0,0,.08);
+    display:flex;
+    justify-content:center;
+    flex-wrap:wrap;
+    gap:8px;
+    padding:12px 10px;
+  }
+  nav.topics button{
+    border:none;
+    background:#f1f1f1;
+    color:#555;
+    font-family:inherit;
+    font-size:.95em;
+    font-weight:bold;
+    padding:10px 18px;
+    border-radius:999px;
+    cursor:pointer;
+    transition:all .15s ease;
+    white-space:nowrap;
+  }
+  nav.topics button:hover{
+    background:#ffe3d6;
+  }
+  nav.topics button.active{
+    background:linear-gradient(135deg,#ff9a8b,#ff6b6b);
+    color:#fff;
+    box-shadow:0 3px 8px rgba(255,107,107,.4);
+  }
+
+  .container{
+    max-width:860px;
+    margin:26px auto 60px;
+    padding:0 16px;
+  }
+  .topic{
+    display:none;
+  }
+  .topic.active{
+    display:block;
+  }
+  .topic-intro{
+    text-align:center;
+    color:var(--muted);
+    margin:6px 0 22px;
+    font-size:.95em;
+  }
+  .progress{
+    display:flex;
+    justify-content:center;
+    gap:6px;
+    margin-bottom:22px;
+    flex-wrap:wrap;
+  }
+  .progress span{
+    background:#fff;
+    border:1.5px solid #eee;
+    color:#999;
+    font-size:.8em;
+    font-weight:bold;
+    padding:6px 12px;
+    border-radius:999px;
+  }
+  .card{
+    background:var(--card);
+    border-radius:16px;
+    box-shadow:0 6px 18px rgba(0,0,0,.08);
+    padding:26px 28px;
+    margin-bottom:26px;
+    scroll-margin-top:80px;
+  }
+  .card h2{
+    margin-top:0;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    color:#e0554d;
+    font-size:1.4em;
+  }
+  .card h2 .num{
+    background:var(--accent);
+    color:#fff;
+    width:34px;
+    height:34px;
+    border-radius:50%;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    font-size:.9em;
+    flex-shrink:0;
+  }
+  .card h2 .lvl{
+    margin-left:auto;
+    font-size:.5em;
+    background:#f0f0f0;
+    color:#888;
+    padding:4px 10px;
+    border-radius:999px;
+    font-weight:bold;
+    white-space:nowrap;
+  }
+  .card h3{
+    color:#2a9d8f;
+    margin-bottom:6px;
+  }
+  .tip{
+    background:#fff8e6;
+    border-left:5px solid var(--accent3);
+    padding:12px 16px;
+    border-radius:8px;
+    margin:14px 0;
+  }
+  .example{
+    background:#eefaf9;
+    border-left:5px solid var(--accent2);
+    padding:14px 18px;
+    border-radius:8px;
+    margin:14px 0;
+  }
+  .example .label{
+    font-weight:bold;
+    color:#1b8a80;
+    margin-bottom:6px;
+    display:block;
+  }
+  .warn{
+    background:#ffecec;
+    border-left:5px solid var(--accent);
+    padding:12px 16px;
+    border-radius:8px;
+    margin:14px 0;
+  }
+  .warn .label{
+    font-weight:bold;
+    color:#d9453d;
+    display:block;
+    margin-bottom:6px;
+  }
+  code, pre{
+    font-family:"Courier New",monospace;
+  }
+  pre{
+    background:#2d2d2d;
+    color:#f1f1f1;
+    padding:14px 16px;
+    border-radius:10px;
+    overflow-x:auto;
+    font-size:.85em;
+  }
+  details.solution{
+    background:#2d2d2d;
+    border-radius:10px;
+    margin:14px 0;
+    overflow:hidden;
+  }
+  details.solution summary{
+    cursor:pointer;
+    list-style:none;
+    padding:12px 16px;
+    background:#3a3a3a;
+    color:#ffd166;
+    font-weight:bold;
+    display:flex;
+    align-items:center;
+    user-select:none;
+  }
+  details.solution summary::-webkit-details-marker{display:none;}
+  details.solution summary::before{
+    content:"▶";
+    display:inline-block;
+    margin-right:8px;
+    transition:transform .2s;
+    font-size:.8em;
+  }
+  details.solution[open] summary::before{
+    transform:rotate(90deg);
+  }
+  details.solution .code-wrap{
+    position:relative;
+  }
+  details.solution pre{
+    border-radius:0;
+    margin:0;
+    padding-top:44px;
+  }
+  /* 讓 Prism.js 語法高亮的 <pre> 沿用我們的圓角／間距設計 */
+  pre[class*="language-"]{
+    border-radius:10px;
+    padding:14px 16px;
+    font-size:.85em;
+    margin:0;
+    text-shadow:none;
+  }
+  details.solution pre[class*="language-"]{
+    border-radius:0;
+    padding-top:44px;
+  }
+  code[class*="language-"]{
+    text-shadow:none;
+  }
+  .copy-btn{
+    position:absolute;
+    top:8px;
+    right:10px;
+    background:#4ecdc4;
+    color:#013a3a;
+    border:none;
+    border-radius:6px;
+    padding:6px 12px;
+    font-size:.8em;
+    font-weight:bold;
+    cursor:pointer;
+    font-family:inherit;
+    z-index:1;
+  }
+  .copy-btn:hover{background:#3dbdb4;}
+  .copy-btn.copied{background:#ffd166;}
+  .coins{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin:12px 0;
+  }
+  .coin{
+    width:56px;
+    height:56px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:bold;
+    color:#fff;
+    font-size:.95em;
+    box-shadow: inset 0 -4px 0 rgba(0,0,0,.15);
+  }
+  .coin.c50{background:#e63946;}
+  .coin.c10{background:#f4a261;}
+  .coin.c5{background:#2a9d8f;}
+  .coin.c1{background:#457b9d;}
+  .timeline{
+    position:relative;
+    margin:20px 0;
+    padding:10px 0;
+  }
+  .bar{
+    height:26px;
+    border-radius:6px;
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:.8em;
+    margin:6px 0;
+    position:relative;
+  }
+  footer{
+    text-align:center;
+    color:var(--muted);
+    padding:20px;
+    font-size:.85em;
+  }
+  .emoji{font-size:1.3em;margin-right:6px;}
+  .zj{
+    background:#eef2ff;
+    border:1.5px dashed #6c7ee1;
+    border-radius:10px;
+    padding:12px 16px;
+    margin:12px 0;
+  }
+  .zj .label{
+    font-weight:bold;
+    color:#4a55c7;
+    display:block;
+    margin-bottom:4px;
+  }
+  .zj a{
+    color:#3949ab;
+    font-weight:bold;
+    text-decoration:none;
+  }
+  .zj a:hover{text-decoration:underline;}
+  .stepbox{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin:14px 0;
+  }
+  .step{
+    flex:1;
+    min-width:140px;
+    background:#fff3e0;
+    border-radius:10px;
+    padding:12px 14px;
+    text-align:center;
+    font-weight:bold;
+    color:#b45309;
+  }
+  .arrow{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:1.4em;
+    color:#ccc;
+  }
+  .grid5{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:4px;
+    max-width:280px;
+    margin:14px auto;
+  }
+  .grid5 div{
+    background:#e0f2f1;
+    border-radius:6px;
+    padding:10px 0;
+    text-align:center;
+    font-weight:bold;
+    color:#00695c;
+  }
+  .review-topic{
+    color:#e0554d;
+    margin:22px 0 6px;
+  }
+  .review-topic:first-child{
+    margin-top:0;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎯 演算法教學重點整理</h1>
+  <p>貪心、掃描線、分治、動態規劃——點選下面的主題，就能看到那個主題由淺入深的教學內容！</p>
+</header>
+
+<nav class="topics">
+  <button class="tab-btn active" data-topic="greedy" onclick="switchTopic('greedy')">🎯 貪心演算法</button>
+  <button class="tab-btn" data-topic="sweep" onclick="switchTopic('sweep')">📏 掃描線演算法</button>
+  <button class="tab-btn" data-topic="divide" onclick="switchTopic('divide')">✂️ 分治演算法</button>
+  <button class="tab-btn" data-topic="dp" onclick="switchTopic('dp')">🧩 動態規劃</button>
+  <button class="tab-btn" data-topic="review" onclick="switchTopic('review')">📝 總複習</button>
+</nav>
+
+<div class="container">
+
+  <!-- ============ 貪心演算法 ============ -->
+  <section class="topic active" id="topic-greedy">
+    <p class="topic-intro">貪心演算法：由淺入深的 5 個重點，一步步看懂「每次都選當下最好」的解題思路。</p>
+
+    <div class="card" id="greedy">
+      <h2><span class="num">1</span>什麼是貪心演算法？<span class="lvl">入門</span></h2>
+      <p>
+        「貪心演算法」聽起來很兇，其實意思很簡單：<b>每一步都選「現在看起來最好」的選擇，選了就不後悔、不回頭</b>。
+      </p>
+      <div class="example">
+        <span class="label">🍬 生活例子：吃到飽夾菜</span>
+        去吃到飽，你可能會想「先夾我現在最想吃的東西」，夾一輪之後再夾下一輪最想吃的。這就是貪心：每一步都選當下最好的，不會想太多以後的事。
+      </div>
+
+      <h3>換代幣的例子</h3>
+      <p>
+        少林寺有四種代幣：<b>50元、10元、5元、1元</b>。如果要換 123 元，最少要用幾個代幣？
+      </p>
+      <div class="coins">
+        <div class="coin c50">50</div>
+        <div class="coin c10">10</div>
+        <div class="coin c5">5</div>
+        <div class="coin c1">1</div>
+      </div>
+      <p>
+        貪心的做法：<b>先盡量用最大的面額換</b>，換不下去了再換小一點的。
+      </p>
+      <div class="example">
+        <span class="label">💰 換 123 元</span>
+        123 = 50×2（用掉100） + 10×2（用掉20） + 1×3（用掉3）<br>
+        總共用了 2+2+3 = <b>7 個代幣</b>，這是最少的方法！
+      </div>
+      <p>這個方法之所以行得通，是因為 50、10、5、1 這幾種面額搭配得剛剛好（比如 5 個 1 元就能換 1 個 5 元），所以每次拿最大的都不會吃虧。</p>
+    </div>
+
+    <div class="card" id="greedy-wrong">
+      <h2><span class="num">2</span>貪心不是每次都對！<span class="lvl">入門</span></h2>
+      <div class="warn">
+        <span class="label">⚠️ 小心！換個代幣面額，貪心就會出錯</span>
+        如果代幣面額變成 <b>1、4、5</b>，要換 8 元：
+        <ul>
+          <li>貪心做法：先拿一個 5 元，剩 3 元只能拿 3 個 1 元 → 用了 <b>4 個</b>代幣</li>
+          <li>但其實用兩個 4 元就湊成 8 元了 → 只要 <b>2 個</b>代幣！</li>
+        </ul>
+        所以貪心找到的答案是「4 個」，比正確答案「2 個」還要多，貪心在這裡失敗了。
+      </div>
+      <p>
+        這告訴我們一個很重要的觀念：<b>用貪心解題前，要先想清楚「每次選當下最好的」是不是真的能保證最後結果最好</b>。有些問題可以證明貪心一定對，有些不行，需要動腦筋想一想或用其他方法（例如動態規劃）。
+      </p>
+    </div>
+
+    <div class="card" id="pq">
+      <h2><span class="num">3</span>優先佇列：誰最急就先處理誰<span class="lvl">基礎</span></h2>
+      <p>
+        排隊本來是「先來先服務」，但醫院掛號不是這樣，<b>病情越緊急的人，會被排到越前面</b>，這種「依照重要程度排隊」的方式，就叫做<b>優先佇列（Priority Queue）</b>。
+      </p>
+      <div class="example">
+        <span class="label">🏥 生活例子：急診室</span>
+        急診室不是誰先到就先看，而是最嚴重的病人優先。優先佇列就像一個會自動幫你把「最重要/最小/最大」的東西放在最前面的排隊系統，隨時有新的人加進來，它也能馬上重新排好順序。
+      </div>
+      <p>
+        在程式裡，優先佇列常常用一種叫「堆（heap）」的方法實作，Python 有現成的工具（<code>heapq</code>）可以直接用，不用自己蓋輪子。
+      </p>
+    </div>
+
+    <div class="card" id="examples">
+      <h2><span class="num">4</span>貪心演算法的經典例子<span class="lvl">進階</span></h2>
+
+      <h3>🥋 比武配對：怎麼贏最多場</h3>
+      <p>
+        兩隊高手要一對一比武，戰力高的贏。你可以自己安排誰打誰，希望贏越多場越好。
+      </p>
+      <div class="example">
+        <span class="label">做法</span>
+        每次找「我方最弱的人」和「對方最弱的人」比：如果我方能贏，就派他上場；如果贏不了，這個弱者就先放棄，換下一個弱者試試看。
+      </div>
+
+      <h3>⏳ 排隊做事：怎麼讓大家等最少</h3>
+      <p>
+        有好幾件工作要做，每件花的時間不同，大家都要等到輪到自己才能開始。要怎麼排順序，讓「每個人等待時間加起來」最少？
+      </p>
+      <div class="example">
+        <span class="label">做法：越快做完的，排越前面</span>
+        比如四件工作要花的時間是 3、1、3、4 分鐘。<br>
+        如果照 (1,3,3,4) 的順序做，完成時間分別是 1、4、7、11，加起來 23 分鐘，這是最短的！<br>
+        道理很簡單：先做「花時間少」的事，可以讓後面排隊的人少等一點。
+      </div>
+
+      <h3>🎬 排電影場次：怎麼看最多場</h3>
+      <p>
+        有很多場活動，每場都有開始和結束時間，同時間只能參加一場，你想參加越多場越好。
+      </p>
+      <div class="example">
+        <span class="label">做法：先挑「最早結束」的那一場</span>
+        為什麼？因為越早結束，留給你之後可以參加的場次就越多！挑完一場後，跳過所有跟它時間重疊的場次，繼續挑下一個最早結束的。
+      </div>
+
+      <div class="timeline">
+        <div class="bar" style="width:40%;background:#e76f51;">場次A 1~4</div>
+        <div class="bar" style="width:30%;background:#2a9d8f;">場次B 0~3 ✅先選</div>
+        <div class="bar" style="width:10%;background:#e9c46a;">場次C 3~4</div>
+        <div class="bar" style="width:20%;background:#2a9d8f;margin-left:35%;">場次D 4~6 ✅再選</div>
+      </div>
+      <p>上面例子中，先選「B (0~3)」再選「D (4~6)」，剛好可以參加兩場，是最多的了。</p>
+    </div>
+
+    <div class="card" id="binary">
+      <h2><span class="num">5</span>貪心 + 二分搜：先猜答案再檢查<span class="lvl">進階</span></h2>
+      <p>
+        有些題目問「最小可以是多少」，如果直接想很難算，我們可以改用「猜答案」的方式：
+      </p>
+      <div class="example">
+        <span class="label">🏗️ 生活例子：蓋幾座基地台才夠涵蓋大家？</span>
+        假設題目問：基地台的訊號範圍最小要多大，才能用固定數量的基地台涵蓋所有的點？<br><br>
+        做法是：<b>先猜一個訊號範圍</b>，然後用貪心的方法檢查「這個範圍夠不夠用」——如果基地台數量夠，代表範圍可以再小一點；如果不夠，代表要再大一點。像玩「猜數字」遊戲一樣，越猜越接近正確答案，這就是<b>二分搜</b>。
+      </div>
+      <p>
+        簡單說：<b>猜一個答案 → 用貪心的方法檢查行不行 → 根據結果調整猜的方向</b>，這樣可以很快找到最好的答案。
+      </p>
+    </div>
+
+    <div class="card" id="greedy-practice">
+      <h2><span class="num">🏆</span>練習題與題解<span class="lvl">由淺入深</span></h2>
+
+      <div class="zj">
+        <span class="label">① 入門：找零錢 / 換代幣</span>
+        <a href="https://zerojudge.tw/ShowProblem?problemid=a675" target="_blank">a675. 00166 - Making Change</a> —— 練習「盡量用大面額」的基本貪心概念。
+      </div>
+
+      <div class="zj">
+        <span class="label">② 基礎：線段覆蓋（最少線段蓋住整個區間）</span>
+        <a href="https://zerojudge.tw/ShowProblem?problemid=e576" target="_blank">e576. 10020 - Minimal Coverage</a> —— 每次選「能延伸最遠」的線段，是本文「先猜答案」之外，貪心處理線段覆蓋的另一種經典寫法。
+      </div>
+
+      <div class="zj">
+        <span class="label">③ 進階：貪心 + 二分搜（基地台）</span>
+        <a href="https://zerojudge.tw/ShowProblem?problemid=c575" target="_blank">c575. APCS 2017-0304-4基地台</a> —— 就是本節「猜答案再檢查」的原題，難度中偏高，非常適合當作代表題。
+      </div>
+
+      <h3>e576 線段覆蓋：完整題解</h3>
+      <p>
+        題目：給定多組線段 [Li, Ri]，用最少數量的線段完全覆蓋 [0, M]，如果無法覆蓋則輸出 0。
+      </p>
+      <details class="solution">
+<summary>📋 點我展開／收合完整題解程式碼</summary>
+<div class="code-wrap">
+<button class="copy-btn" onclick="copyCode(this)">📋 複製程式碼</button>
+<pre><code class="language-python"># e576 線段覆蓋：貪心（每次選「能延伸最遠」的線段）
+import sys
+
+def solve():
+    data = sys.stdin.read().split()
+    idx = 0
+    T = int(data[idx]); idx += 1   # 測資組數
+    outputs = []
+    for _ in range(T):
+        m = int(data[idx]); idx += 1   # 要覆蓋 [0, m]
+        segs = []
+        while True:
+            l, r = int(data[idx]), int(data[idx+1]); idx += 2
+            if l == 0 and r == 0:   # l=r=0 代表這組線段輸入結束
+                break
+            segs.append((l, r))
+        segs.sort()   # 依左端點排序，才能由左到右掃描
+
+        i = 0
+        n = len(segs)
+        current_end = 0   # 目前已經覆蓋到哪裡
+        selected = []
+        ok = True
+        while current_end < m:
+            best_r = current_end
+            best_idx = -1
+            # 在「左端點 <= 目前覆蓋到的位置」的線段中，挑「能延伸最遠」的那條
+            while i < n and segs[i][0] <= current_end:
+                if segs[i][1] > best_r:
+                    best_r = segs[i][1]
+                    best_idx = i
+                i += 1
+            if best_idx == -1:
+                ok = False   # 沒有線段能再往右延伸，代表蓋不滿 [0, m]
+                break
+            selected.append(segs[best_idx])
+            current_end = best_r
+
+        if not ok:
+            outputs.append("0")
+        else:
+            lines = [str(len(selected))]
+            for l, r in sorted(selected):
+                lines.append(f"{l} {r}")
+            outputs.append("\n".join(lines))
+    print("\n\n".join(outputs))
+
+solve()
+</code></pre>
+</div>
+</details>
+
+      <h3>c575 基地台：完整題解</h3>
+      <p>
+        題目：在數線上有 N 個服務點，架設 K 座直徑相同的基地台，每座基地台可以涵蓋一段連續區間，求可以涵蓋所有服務點的最小直徑。
+      </p>
+      <details class="solution">
+<summary>📋 點我展開／收合完整題解程式碼</summary>
+<div class="code-wrap">
+<button class="copy-btn" onclick="copyCode(this)">📋 複製程式碼</button>
+<pre><code class="language-python"># c575 基地台：貪心 + 二分搜
+# 讀入服務點數量 n 與基地台數量 k
+n, k = map(int, input().split())
+p = list(map(int, input().split()))
+p.sort()  # 先排序，才能從左到右用貪心的方式檢查
+
+# 檢查：如果每座基地台的直徑是 d，是否可以用不超過 k 座基地台涵蓋所有點
+def enough(d):
+    count = 0          # 目前用了幾座基地台
+    last_covered = -1  # 目前為止涵蓋範圍的右端點（一開始還沒涵蓋，設一個不可能的值）
+    for x in p:
+        if x > last_covered:        # 這個點還沒被涵蓋，必須新蓋一座基地台
+            count += 1
+            last_covered = x + d    # 新基地台從 x 開始，涵蓋到 x+d
+            if count > k:           # 用的基地台已經超過 k 座，提早失敗
+                return False
+    return count <= k
+
+# 對直徑 d 做二分搜，找出最小的可行直徑
+lo, hi = 0, p[-1] - p[0]   # 直徑的搜尋範圍：0 到 最大差距
+while lo < hi:
+    mid = (lo + hi) // 2
+    if enough(mid):
+        hi = mid        # mid 可行，答案可能可以更小
+    else:
+        lo = mid + 1     # mid 不可行，答案要更大
+
+print(lo)  # 印出最小可行直徑
+</code></pre>
+</div>
+</details>
+    </div>
+  </section>
+
+  <!-- ============ 掃描線演算法 ============ -->
+  <section class="topic" id="topic-sweep">
+    <p class="topic-intro">掃描線演算法：想像一把尺子從左滑到右，邊滑邊更新答案。</p>
+
+    <div class="card" id="sweep">
+      <h2><span class="num">1</span>掃描線演算法：想像一把尺子滑過去<span class="lvl">基礎</span></h2>
+      <p>
+        掃描線演算法的意思是：<b>想像有一條線（或一把尺）從左慢慢滑到右邊</b>，滑的過程中，我們一邊記錄目前看到了什麼，一邊更新答案。
+      </p>
+
+      <h3>📏 線段的總長度：重疊的地方不要算兩次</h3>
+      <p>
+        如果地上畫了好幾條線段，有些會互相重疊，要算出「總共蓋住了多長」，重疊的部分只能算一次。
+      </p>
+      <div class="example">
+        <span class="label">做法</span>
+        把所有線段的<b>開始點和結束點</b>都放在一起，由左到右排序。想像尺子從左滑到右，碰到「開始點」就代表這裡開始被蓋住，碰到「結束點」就代表結束。這樣可以一次算出所有被蓋住的長度，不會重複算。
+      </div>
+
+      <h3>📈 買賣賺最多：只要記住「目前最低價」</h3>
+      <p>
+        每天股票（或商品）價格都不一樣，先買後賣一次，怎麼賺最多？
+      </p>
+      <div class="example">
+        <span class="label">做法：邊看邊記住「目前為止的最低價」</span>
+        從第一天開始，每天想：「如果我今天賣掉，最多能賺多少？」也就是「今天的價格」減去「到今天為止看過的最低價格」。把每天算出來的獲利中最大的記下來，就是答案！這樣只要看一次所有的天數，就能算出來，不需要每兩天都去比較。
+      </div>
+
+      <div class="tip">
+        💡 這其實跟「線段聯集」的想法很像：都是<b>從左到右掃過去，一邊掃一邊更新一個簡單的紀錄（例如目前最低價、目前蓋住的長度）</b>，就能又快又準地算出答案，不需要把所有組合都比一遍。
+      </div>
+    </div>
+
+    <div class="card" id="sweep-practice">
+      <h2><span class="num">🏆</span>練習題與題解<span class="lvl">由淺入深</span></h2>
+
+      <div class="zj">
+        <span class="label">① 暖身：每群選一個數字湊最大總和</span>
+        <a href="https://zerojudge.tw/ShowProblem?problemid=c295" target="_blank">c295. APCS-2016-1029-2最大和</a>（注意：此題實際內容不是股票獲利，而是「N 群數字，每群選一個湊出最大總和，並判斷選出的數字能否整除總和」，適合拿來練習掃描前的資料處理手感，當作暖身）。
+      </div>
+
+      <div class="zj">
+        <span class="label">② 進階：線段聯集總長度（APCS 原題）</span>
+        <a href="https://zerojudge.tw/ShowProblem?problemid=b966" target="_blank">b966. 3. 線段覆蓋長度</a> —— 就是本節「線段聯集」的原題，是掃描線演算法最經典的入門應用。
+      </div>
+
+      <h3>c295 最大和：完整題解</h3>
+      <p>
+        題目：給定 N 群數字，每群 M 個，各群選一個數字加總得到 S，求 S 的最大值，並輸出所選數字中能整除 S 的（依群別順序），若都不能整除則輸出 -1。
+      </p>
+      <details class="solution">
+<summary>📋 點我展開／收合完整題解程式碼</summary>
+<div class="code-wrap">
+<button class="copy-btn" onclick="copyCode(this)">📋 複製程式碼</button>
+<pre><code class="language-python"># c295 最大和：貪心（每群挑最大值，總和自然最大）
+n, m = map(int, input().split())
+picks = []
+for _ in range(n):
+    row = list(map(int, input().split()))
+    picks.append(max(row))   # 每群只要選最大的那個，總和一定最大
+
+S = sum(picks)
+# 找出「選出的數字」中，能整除總和 S 的那些，依群別順序輸出
+divisors = [str(x) for x in picks if S % x == 0]
+
+print(S)
+print(' '.join(divisors) if divisors else -1)
+</code></pre>
+</div>
+</details>
+
+      <h3>b966 線段覆蓋長度：完整題解</h3>
+      <p>
+        題目：輸入 N 個線段，計算這些線段總共覆蓋的長度，重疊的部分只能算一次。
+      </p>
+      <details class="solution">
+<summary>📋 點我展開／收合完整題解程式碼</summary>
+<div class="code-wrap">
+<button class="copy-btn" onclick="copyCode(this)">📋 複製程式碼</button>
+<pre><code class="language-python"># b966 線段覆蓋長度：掃描線（差分 / 事件排序）
+n = int(input())
+events = []  # 每個線段拆成「開始事件」與「結束事件」
+for _ in range(n):
+    l, r = map(int, input().split())
+    events.append((l, 1))    # 在 l 這裡厚度 +1
+    events.append((r, -1))   # 在 r 這裡厚度 -1
+
+# 排序規則：座標小的在前；座標相同時，「開始事件」要排在「結束事件」前面，
+# 這樣才不會把同一座標的覆蓋長度算漏
+events.sort(key=lambda e: (e[0], -e[1]))
+
+total = 0       # 目前累積的總覆蓋長度
+thickness = 0   # 目前這個位置被幾條線段蓋住
+last = None     # 上一個處理過的座標
+
+for pos, delta in events:
+    if thickness > 0 and last is not None:
+        # 上一段 [last, pos] 之間有被覆蓋，把長度加進總和
+        total += pos - last
+    last = pos
+    thickness += delta   # 更新目前的覆蓋厚度
+
+print(total)
+</code></pre>
+</div>
+</details>
+    </div>
+  </section>
+
+  <!-- ============ 分治演算法 ============ -->
+  <section class="topic" id="topic-divide">
+    <p class="topic-intro">分治演算法：切一半，各自解決，再合併起來。</p>
+
+    <div class="card" id="divide">
+      <h2><span class="num">1</span>分治演算法：切一半，各自解決，再合併<span class="lvl">基礎</span></h2>
+      <p>
+        分治（Divide and Conquer）的精神很簡單：<b>把一個大問題切成兩半，各自先解決小問題，最後把兩邊的答案合併成完整答案</b>。
+      </p>
+      <div class="stepbox">
+        <div class="step">① 切割<br>把問題分兩半</div>
+        <div class="arrow">→</div>
+        <div class="step">② 各自求解<br>（遞迴處理）</div>
+        <div class="arrow">→</div>
+        <div class="step">③ 合併<br>組合成完整答案</div>
+      </div>
+      <div class="example">
+        <span class="label">🍕 生活例子：兩個人一起數一大疊考卷</span>
+        一疊考卷太多了，一個人數要很久。如果分成兩疊，你數一疊、朋友數一疊，最後把兩個數字加起來，就是總數。這就是分治：<b>切一半、各自做、加起來</b>。
+      </div>
+
+      <h3>📊 合併排序法：邊分邊排序</h3>
+      <p>
+        排序一堆數字時，可以先把數字分成兩半，各自排好序，最後再把兩個已經排好的序列合併成一個。合併兩個已經排好序的隊伍其實很簡單：只要每次比較兩隊最前面的人，把比較小的那個先放進新隊伍，一直比到其中一隊清空為止。
+      </p>
+
+      <h3>🔍 分治最重要的是「合併」這一步</h3>
+      <p>
+        使用分治法時，切割跟各自求解通常都很簡單（就是呼叫自己去處理一半的資料），<b>真正需要動腦筋的地方是「怎麼把兩邊的答案合併起來」</b>。想清楚合併的方法，整個問題往往就解決了。
+      </p>
+      <div class="example">
+        <span class="label">🧮 例子：計算逆序對（數列中「前面比後面大」的配對數）</span>
+        給一排數字，找出所有「前面的數字比後面的數字大」的配對，例如 (3, 1, 9, 8, 9, 2) 裡有 6 組這樣的配對。
+        <br><br>
+        直接兩兩比對要花很多時間，但如果用分治：先算左邊自己內部的配對數、算右邊自己內部的配對數，最後只要算「左邊某個數字比右邊某個數字大」的配對數量，而這剛好可以搭配「合併排序法」的合併步驟一起完成，一次處理，非常有效率。
+      </div>
+      <div class="zj">
+        <span class="label">🏆 動手練習（zerojudge）</span>
+        <a href="https://zerojudge.tw/ShowProblem?problemid=q655" target="_blank">q655. 上菜 (Serving)</a> —— 這一題的核心就是計算逆序對數量，很適合拿來練習分治法的合併技巧。
+      </div>
+
+      <div class="tip">
+        💡 分治和掃描線常常可以解決同一種問題（例如「線段最近點對」），差別在於：分治通常只需要簡單的陣列就能做到，而掃描線有時需要比較複雜的資料結構。所以遇到問題時，不妨兩種都想想看！
+      </div>
+    </div>
+
+    <div class="card" id="divide-practice">
+      <h2><span class="num">🏆</span>練習題與題解<span class="lvl">由淺入深</span></h2>
+
+      <div class="zj">
+        <span class="label">① 基礎：合併排序的合併技巧（自我練習）</span>
+        先試著自己動手寫一次合併排序法（merge sort），確定自己能正確合併兩個已排序好的陣列，這是所有分治合併題目的基本功。
+      </div>
+
+      <div class="zj">
+        <span class="label">② 進階：逆序對（APCS 相關概念，分治法原題）</span>
+        <a href="https://zerojudge.tw/ShowProblem?problemid=q655" target="_blank">q655. 上菜 (Serving)</a> —— 標籤明確標示「分治法／逆序數對」，是本節「合併排序法找逆序對」概念的實戰題。
+      </div>
+
+      <h3>q655 上菜：完整題解</h3>
+      <p>
+        題目：N 分鐘內，每分鐘廚師做出一道料理（種類 C_i），同時也有一位客人點餐（種類 D_i）。上菜規則是「依照料理做出的先後順序」，同種類料理則「先點的客人先上菜」。當某位客人被排在他後面點餐的人搶先上菜時，怒氣值 +1，請計算所有客人的怒氣值總和。
+      </p>
+      <p>
+        關鍵想法：把每一次「上菜順序」對應到某一位客人，就會得到一個「客人到達順序 → 被上菜順序」的對應表。而怒氣值總和，其實就是這張對應表裡「逆序對」的數量——這正是分治法（合併排序法）的經典應用！
+      </p>
+      <details class="solution">
+<summary>📋 點我展開／收合完整題解程式碼</summary>
+<div class="code-wrap">
+<button class="copy-btn" onclick="copyCode(this)">📋 複製程式碼</button>
+<pre><code class="language-python"># q655 上菜 (Serving)：分治法（合併排序法計算逆序對）
+import sys
+from collections import deque
+
+def merge_count(a, le, ri):
+    # 計算 a[le:ri] 區間內的逆序對數量，同時把這段區間排序好
+    if le + 1 >= ri:
+        return 0
+    mid = (le + ri) // 2
+    w = merge_count(a, le, mid) + merge_count(a, mid, ri)
+    temp = []
+    i, j = le, mid
+    while i < mid and j < ri:
+        if a[i] <= a[j]:
+            temp.append(a[i]); i += 1
+        else:
+            temp.append(a[j]); j += 1
+            w += mid - i   # 左邊剩下的元素都比 a[j] 大，形成逆序對
+    temp.extend(a[i:mid])
+    temp.extend(a[j:ri])
+    a[le:ri] = temp
+    return w
+
+def solve():
+    data = sys.stdin.read().split()
+    idx = 0
+    n = int(data[idx]); idx += 1
+    C = [0] * (n + 1)   # 第 m 分鐘做出的料理種類
+    D = [0] * (n + 1)   # 第 i 分鐘點餐的料理種類
+    for m in range(1, n + 1):
+        C[m] = int(data[idx]); D[m] = int(data[idx + 1]); idx += 2
+
+    # 依料理種類，分別把「製作順序」與「點餐順序」排隊
+    prod_queue = {}
+    arr_queue = {}
+    for m in range(1, n + 1):
+        prod_queue.setdefault(C[m], deque()).append(m)
+    for i in range(1, n + 1):
+        arr_queue.setdefault(D[i], deque()).append(i)
+
+    # 同種類料理採 FIFO 配對：第 k 個做出的料理，配給第 k 個點這道菜的客人
+    pos = [0] * (n + 1)   # pos[客人到達順序] = 被分配到的製作順序（= 上菜順序）
+    for t, aq in arr_queue.items():
+        pq = prod_queue[t]
+        while aq:
+            cust = aq.popleft()
+            pos[cust] = pq.popleft()
+
+    # 怒氣值總和 = 「到達順序」與「上菜順序」之間的逆序對數量
+    arr = pos[1:]
+    print(merge_count(arr, 0, len(arr)))
+
+solve()
+</code></pre>
+</div>
+</details>
+    </div>
+  </section>
+
+  <!-- ============ 動態規劃 ============ -->
+  <section class="topic" id="topic-dp">
+    <p class="topic-intro">動態規劃是公認最難的一關，這裡準備了 8 個由淺入深的重點，一步步建立感覺。</p>
+    <div class="progress">
+      <span>① 為什麼難</span><span>② 三步驟</span><span>③ 一維</span><span>④ 二維</span>
+      <span>⑤ 背包</span><span>⑥ 進階</span><span>⑦ 挑戰題</span><span>⑧ 學習建議</span>
+    </div>
+
+    <div class="card" id="dp-intro">
+      <h2><span class="num">1</span>動態規劃是什麼？為什麼最難？<span class="lvl">入門</span></h2>
+      <p>
+        動態規劃（Dynamic Programming，簡稱 DP）常常被認為是最難學的演算法主題，原因不是它用到艱深的數學，而是<b>每一題的「思考方式」都不太一樣，很難套公式</b>，需要多做題目累積經驗才能抓到感覺。
+      </p>
+      <div class="warn">
+        <span class="label">⚠️ 為什麼「純遞迴」會太慢？</span>
+        舉例：計算「爬樓梯，每次走1階或2階，總共有幾種走法」。如果直接寫遞迴 <code>f(n) = f(n-1) + f(n-2)</code>，程式看起來很簡潔，但是當 n 只是 40，程式就會卡很久；n=100 更是「跑到天荒地老都跑不完」。
+        <br><br>
+        原因是：<b>同樣的答案被重複計算了非常多次</b>。例如算 f(40) 時，f(38) 這個答案會被重複算了好幾萬次！
+      </div>
+      <p>
+        動態規劃要解決的正是這個問題：<b>把算過的答案「記下來」，之後需要用到時直接查表，不要重算</b>。這個概念其實很像我們寫功課時的「小抄」或「查表機」——算過的東西寫在紙上，下次要用就直接看，不用重新算一遍。
+      </p>
+      <div class="example">
+        <span class="label">📒 生活例子：查電話簿而不是每次都問一遍</span>
+        如果每次要打電話給同學都要重新問全班同學「誰知道他的電話」，太浪費時間了。不如把問到的電話號碼記在電話簿裡，下次要用直接翻開查，這就是動態規劃「記錄答案」的精神。
+      </div>
+    </div>
+
+    <div class="card" id="dp-steps">
+      <h2><span class="num">2</span>動態規劃的三個步驟<span class="lvl">入門</span></h2>
+      <p>設計一個動態規劃解法，通常照著這三個步驟思考：</p>
+      <div class="stepbox">
+        <div class="step">① 定義子問題<br>「這題可以拆成哪些比較小的同類型問題？」</div>
+        <div class="arrow">→</div>
+        <div class="step">② 找出遞迴關係<br>「這個問題的答案，怎麼用小問題的答案算出來？」</div>
+        <div class="arrow">→</div>
+        <div class="step">③ 決定計算順序<br>「照什麼順序算，才能保證用到的答案都已經算好了？」</div>
+      </div>
+      <p>
+        前兩步驟其實跟「純遞迴」的想法一樣，真正讓動態規劃變快的關鍵是<b>第三步：把答案存進一個表格，依照順序（通常是由小到大）一步步計算，不再重複呼叫自己</b>。
+      </p>
+      <div class="tip">
+        💡 也有一種偷懶的寫法叫「Top-down（由上而下）」：還是用遞迴寫，但是每次遞迴前先「偷看」表格裡有沒有算過，算過就直接拿現成答案，沒算過才真的去算，算完記得存回表格。這個方法很好寫，但要小心遞迴太深可能會出問題。
+      </div>
+    </div>
+
+    <div class="card" id="dp-1d">
+      <h2><span class="num">3</span>一維問題：爬樓梯<span class="lvl">基礎</span></h2>
+      <p>
+        最簡單的一類動態規劃問題，只需要一個一維表格就能解決。
+      </p>
+      <div class="example">
+        <span class="label">🪜 爬樓梯問題</span>
+        每一階樓梯都寫著一個「扣分」數字，每次可以走1階或2階，請問走到最後一階，最少總共要扣多少分？
+        <br><br>
+        定義 <code>c[i]</code> 為「走到第 i 階的最小扣分」。因為走到第 i 階的最後一步一定是從第 i-1 階或第 i-2 階走過來的，所以：
+        <br>
+        <code>c[i] = 第i階的扣分 + min(c[i-1], c[i-2])</code>
+        <br><br>
+        只要照 i 從小到大的順序，把每一階的答案存進表格裡，最後直接讀出最後一階的答案就好了，完全不需要遞迴！
+      </div>
+      <div class="zj">
+        <span class="label">🏆 動手練習（zerojudge）</span>
+        <a href="https://zerojudge.tw/ShowProblem?problemid=a519" target="_blank">a519. 12459 - Bees' ancestors</a> —— 這一題是類似費氏數列的一維動態規劃入門題，很適合拿來練習「表格由小到大算」的感覺。
+      </div>
+    </div>
+
+    <div class="card" id="dp-2d">
+      <h2><span class="num">4</span>二維問題：方格路徑、最長共同子字串<span class="lvl">基礎</span></h2>
+      <p>
+        有些問題的子問題需要用「兩個數字」來描述（例如格子的座標，或兩個字串各取多長），這時候就需要一個二維表格。
+      </p>
+      <h3>🗺️ 方格路徑</h3>
+      <p>
+        在一個方格棋盤上，每格都有一個分數，從左上角走到右下角（每步只能往右或往下），要找出經過分數總和最大的路線。因為每個格子只能從「左邊」或「上面」走過來，所以：
+      </p>
+      <div class="grid5">
+        <div>?</div><div>?</div><div>?</div><div>?</div>
+        <div>?</div><div>←上</div><div>目標</div><div>?</div>
+        <div>?</div><div>?</div><div>左↑</div><div>?</div>
+      </div>
+      <p style="text-align:center;">
+        <code>f[i][j] = max(f[i-1][j], f[i][j-1]) + 這一格的分數</code>
+      </p>
+      <p>只要由上而下、由左而右依序把每個格子填好，最後右下角的格子就是答案。</p>
+
+      <h3>🔤 最長共同子字串（LCS）</h3>
+      <p>
+        給兩個字串，找出「最長的共同子序列」（字母順序要一樣，但可以跳過某些字母）。例如 "algorithm" 與 "alignment" 的最長共同子序列長度是 4（例如 algm）。
+      </p>
+      <div class="example">
+        <span class="label">做法</span>
+        比較兩字串的最後一個字母：如果一樣，答案就是「兩邊都去掉最後一個字母的答案」再加1；如果不一樣，答案就是「去掉其中一邊最後一個字母」兩種情況中比較大的那個。用一個二維表格，由左上往右下逐格算，就能算出答案。
+      </div>
+      <div class="zj">
+        <span class="label">🏆 動手練習（zerojudge）</span>
+        <a href="https://zerojudge.tw/ShowProblem?problemid=a252" target="_blank">a252. Another LCS</a> —— 直接練習最長共同子字串的經典二維動態規劃題目。
+      </div>
+      <div class="tip">
+        💡 順帶一提：像「找一段連續數字的最大總和」這種問題，用分治也能解（把陣列切一半，分別找左邊、右邊、跨過中間的最大和，取最大值），思路可以參考本頁「分治演算法」分頁中的合併技巧。
+      </div>
+    </div>
+
+    <div class="card" id="dp-knapsack">
+      <h2><span class="num">5</span>背包問題<span class="lvl">進階</span></h2>
+      <p>
+        背包問題是動態規劃最經典的題目之一，幾乎每個學動態規劃的人都會碰到它。
+      </p>
+      <div class="example">
+        <span class="label">🎒 大賣場免費大搬家</span>
+        你可以在「總重量不超過 W」的限制下，從 n 樣商品中挑選一些帶走（每樣只能選一次，不能只拿一部分），每樣商品都有自己的重量與價值，希望帶走的商品總價值越大越好。
+      </div>
+      <p>
+        如果只想「前 i 樣物品」的最佳解，會發現新增一樣物品可能讓整個答案大翻盤，很難直接列出遞迴式。這時候的訣竅是<b>多加一個條件</b>：除了「前 i 樣物品」，再加上「重量限制 j」，也就是定義：
+      </p>
+      <p style="text-align:center;"><code>d[i][j] = 考慮前 i 樣物品、重量不超過 j 時的最大價值</code></p>
+      <div class="example">
+        <span class="label">遞迴關係</span>
+        對第 i 樣物品，只有兩種選擇：<br>
+        • 不選它：<code>d[i][j] = d[i-1][j]</code><br>
+        • 選它（如果裝得下）：<code>d[i][j] = 這樣物品的價值 + d[i-1][j - 這樣物品的重量]</code><br>
+        兩者取比較大的就是答案。
+      </div>
+      <div class="zj">
+        <span class="label">🏆 動手練習（zerojudge）</span>
+        <a href="https://zerojudge.tw/ShowProblem?problemid=b184" target="_blank">b184. 5. 裝貨櫃問題</a> —— 標準的 0/1 背包問題，跟上面「大賣場免費大搬家」的做法完全一樣，很適合當作背包問題的第一題練習。
+      </div>
+    </div>
+
+    <div class="card" id="dp-lis">
+      <h2><span class="num">6</span>最長遞增子序列（進階）<span class="lvl">進階</span></h2>
+      <p>
+        這一題稍微難一點，但是非常經典，常被簡稱 LIS（Longest Increasing Subsequence）。
+      </p>
+      <div class="example">
+        <span class="label">📈 例子</span>
+        給一排數字，找出最長的一段「由左到右挑出來、而且數字越挑越大」的子序列。例如 (2, 4, 1, 3, 6, 4, 6, 9) 中可以挑出 (1, 3, 4, 6, 9)，長度是 5。
+      </div>
+      <p>
+        最直接的想法：定義 <code>lis(i)</code> 為「以第 i 個數字結尾的最長遞增序列長度」，那麼 <code>lis(i) = 前面比它小的數字中，lis值最大的那個 + 1</code>。這樣寫程式雖然正確，但是每個位置都要往前搜尋一遍，速度不夠快。
+        更聰明的做法是額外維護一個「目前每種長度，最小可能的結尾數字」的表格，這樣就可以用二分搜快速找到該接在哪裡後面，把速度從「檢查所有組合」大幅加快。
+      </p>
+      <div class="zj">
+        <span class="label">🏆 動手練習（zerojudge）</span>
+        <a href="https://zerojudge.tw/ShowProblem?problemid=d052" target="_blank">d052. 11456 - Trainsorting</a> —— 直接練習最長遞增子序列（LIS），是體會「動態規劃搭配二分搜可以加速」的好題目。
+      </div>
+    </div>
+
+    <div class="card" id="dp-hard">
+      <h2><span class="num">7</span>階梯數字（挑戰題）<span class="lvl">挑戰</span></h2>
+      <p>
+        這一題被公認是比較難想的動態規劃題目，放在這裡讓大家看看「難的動態規劃」長什麼樣子，不用擔心一次就要完全學會。
+      </p>
+      <div class="example">
+        <span class="label">🔢 階梯數字</span>
+        如果一個正整數「從左到右看，每一位數字只會不變或變大」，就稱為階梯數字，例如 123、234、777。給一個數字 N，請計算不超過 N 的階梯數字總共有多少個。
+      </div>
+      <p>
+        這一題的關鍵想法是：<b>先算出一個表格 <code>step[i][j]</code>，代表「以數字 j 開頭的 i 位階梯數字總共有幾個」</b>，再依照輸入的 N，一位一位去累加表格裡對應的數字。因為每多一位數字時，能接在後面的數字只能「不小於前一位」，所以表格可以用一個簡單的規律，由位數少往位數多、由大數字往小數字，逐步計算出來。
+      </p>
+      <p>
+        這一題告訴我們：<b>不是所有動態規劃的子問題都直接對應題目給的資料</b>，有時候需要先設計一個「輔助表格」，把數字拆解成位數來思考，才找得到規律。這也是動態規劃困難的地方——找到正確的子問題定義，往往比寫程式本身還要花時間。
+      </p>
+      <div class="zj">
+        <span class="label">🏆 動手練習（zerojudge）</span>
+        <a href="https://zerojudge.tw/ShowProblem?problemid=c543" target="_blank">c543. 四、階梯數字(ladder) (APCS 加強題)</a> —— 就是這一題的原題，非常適合挑戰看看，感受一下困難動態規劃題目的思考過程。
+      </div>
+    </div>
+
+    <div class="card" id="dp-tips">
+      <h2><span class="num">8</span>學動態規劃的建議<span class="lvl">總結</span></h2>
+      <p><span class="emoji">✏️</span>先寫出「純遞迴」版本，確定遞迴關係式是對的，再想辦法改成表格或加上小抄（memo），不要一開始就想直接寫出最有效率的版本。</p>
+      <p><span class="emoji">🧩</span>如果「定義子問題」時發現遞迴式列不出來，通常代表子問題的定義「條件不夠多」，可以試著多加一個條件（就像背包問題多加了「重量限制」這個條件）。</p>
+      <p><span class="emoji">📚</span>多做幾題經典題型（爬樓梯、方格路徑、LCS、背包、LIS），把它們的思考方式記起來，很多新題目其實是這些經典題的變化版。</p>
+      <p><span class="emoji">🐢</span>不用急著求快，先求對。能正確跑出答案的暴力解，也是找到規律、設計動態規劃的重要線索。</p>
+    </div>
+
+    <div class="card" id="dp-practice">
+      <h2><span class="num">🏆</span>練習題與題解<span class="lvl">由淺入深</span></h2>
+
+      <div class="zj">
+        <span class="label">① 入門：一維DP（費氏數列變形）</span>
+        <a href="https://zerojudge.tw/ShowProblem?problemid=a519" target="_blank">a519. 12459 - Bees' ancestors</a>
+      </div>
+      <div class="zj">
+        <span class="label">② 基礎：二維DP（最長共同子字串 LCS）</span>
+        <a href="https://zerojudge.tw/ShowProblem?problemid=a252" target="_blank">a252. Another LCS</a>
+      </div>
+      <div class="zj">
+        <span class="label">③ 進階：0/1 背包問題</span>
+        <a href="https://zerojudge.tw/ShowProblem?problemid=b184" target="_blank">b184. 5. 裝貨櫃問題</a>
+      </div>
+      <div class="zj">
+        <span class="label">④ 進階：最長遞增子序列 LIS（搭配二分搜優化）</span>
+        <a href="https://zerojudge.tw/ShowProblem?problemid=d052" target="_blank">d052. 11456 - Trainsorting</a>
+      </div>
+      <div class="zj">
+        <span class="label">⑤ 挑戰：數位 DP（階梯數字）</span>
+        <a href="https://zerojudge.tw/ShowProblem?problemid=c543" target="_blank">c543. 四、階梯數字(ladder) (APCS 加強題)</a>
+      </div>
+
+      <h3>① a519 蜜蜂祖先數：一維DP</h3>
+      <p>輸入多行世代數 n（以 0 結束），輸出第 n 代的祖先數量。第 n 代祖先數 = 第 n-1 代 + 第 n-2 代（跟費氏數列一樣的遞迴關係）。</p>
+      <details class="solution">
+<summary>📋 點我展開／收合完整題解程式碼</summary>
+<div class="code-wrap">
+<button class="copy-btn" onclick="copyCode(this)">📋 複製程式碼</button>
+<pre><code class="language-python"># a519 蜜蜂祖先數：一維DP（費氏數列變形）
+import sys
+
+MAXN = 80
+# 先把 1~80 代的祖先數全部算好，存進表格 anc[]
+anc = [0] * (MAXN + 1)
+anc[1] = 1
+anc[2] = 2
+for i in range(3, MAXN + 1):
+    anc[i] = anc[i-1] + anc[i-2]  # 遞迴關係：跟前兩代的祖先數相加
+
+for line in sys.stdin:
+    line = line.strip()
+    if line == '':
+        continue
+    n = int(line)
+    if n == 0:      # 輸入 0 代表結束
+        break
+    print(anc[n])
+</code></pre>
+</div>
+</details>
+
+      <h3>② a252 三字串最長共同子序列：二維DP的延伸（三維）</h3>
+      <p>輸入三個字串，求三者共同的最長子序列長度。做法是把課文中兩字串的 LCS 遞迴式，多加一個維度變成三個字串版本。</p>
+      <details class="solution">
+<summary>📋 點我展開／收合完整題解程式碼</summary>
+<div class="code-wrap">
+<button class="copy-btn" onclick="copyCode(this)">📋 複製程式碼</button>
+<pre><code class="language-python"># a252 三字串的最長共同子序列（LCS）：三維DP
+s1 = input().strip()
+s2 = input().strip()
+s3 = input().strip()
+l1, l2, l3 = len(s1), len(s2), len(s3)
+
+# dp[i][j][k]：s1前i個字、s2前j個字、s3前k個字的LCS長度
+dp = [[[0] * (l3 + 1) for _ in range(l2 + 1)] for _ in range(l1 + 1)]
+
+for i in range(1, l1 + 1):
+    for j in range(1, l2 + 1):
+        for k in range(1, l3 + 1):
+            if s1[i-1] == s2[j-1] == s3[k-1]:
+                # 三個字元都相同，可以接在一起，LCS長度加1
+                dp[i][j][k] = dp[i-1][j-1][k-1] + 1
+            else:
+                # 至少捨棄其中一個字串的最後一個字元，取最大值
+                dp[i][j][k] = max(dp[i-1][j][k], dp[i][j-1][k], dp[i][j][k-1])
+
+print(dp[l1][l2][l3])
+</code></pre>
+</div>
+</details>
+
+      <h3>③ b184 裝貨櫃問題：0/1 背包</h3>
+      <p>輸入包含多筆測資直到檔案結尾，每筆測資有 n 項貨物與體積、利潤，貨櫃總容量固定是 100，求最大利潤總和。</p>
+      <details class="solution">
+<summary>📋 點我展開／收合完整題解程式碼</summary>
+<div class="code-wrap">
+<button class="copy-btn" onclick="copyCode(this)">📋 複製程式碼</button>
+<pre><code class="language-python"># b184 裝貨櫃問題：0/1背包（一維滾動陣列版本）
+import sys
+
+def solve():
+    data = sys.stdin.read().split()
+    idx = 0
+    results = []
+    while idx < len(data):
+        n = int(data[idx]); idx += 1
+        w = [0] * n  # 每項貨物的體積
+        p = [0] * n  # 每項貨物的利潤
+        for i in range(n):
+            w[i] = int(data[idx])
+            p[i] = int(data[idx + 1])
+            idx += 2
+        W = 100  # 貨櫃總容量固定是100
+        # dp[j]：容量剛好可用 j 時，可以獲得的最大利潤
+        dp = [0] * (W + 1)
+        for i in range(n):
+            # j 要由大到小更新，確保每項貨物最多只被選一次（0/1背包的關鍵）
+            for j in range(W, w[i] - 1, -1):
+                dp[j] = max(dp[j], dp[j - w[i]] + p[i])
+        results.append(str(dp[W]))
+    print('\n'.join(results))
+
+solve()
+</code></pre>
+</div>
+</details>
+
+      <h3>④ d052 火車調度：最長遞增子序列（LIS）</h3>
+      <p>輸入多筆測資，每筆有 n 節車廂與重量，求最長「重量遞增」的子序列長度。用二分搜將複雜度優化到 O(n log n)。</p>
+      <details class="solution">
+<summary>📋 點我展開／收合完整題解程式碼</summary>
+<div class="code-wrap">
+<button class="copy-btn" onclick="copyCode(this)">📋 複製程式碼</button>
+<pre><code class="language-python"># d052 火車調度：最長遞增子序列（LIS），二分搜優化版
+import bisect
+import sys
+
+def solve():
+    data = sys.stdin.read().split()
+    idx = 0
+    T = int(data[idx]); idx += 1
+    out = []
+    for _ in range(T):
+        n = int(data[idx]); idx += 1
+        w = [int(data[idx + i]) for i in range(n)]
+        idx += n
+        # tails[k]：長度為 k+1 的遞增子序列中，最小可能的結尾值
+        tails = []
+        for v in w:
+            pos = bisect.bisect_left(tails, v)  # 找出可以接在哪裡
+            if pos == len(tails):
+                tails.append(v)   # 可以接得比原本都長，長度+1
+            else:
+                tails[pos] = v    # 用更小的結尾值替換，讓未來更容易接更長
+        out.append(str(len(tails)))
+    print('\n'.join(out))
+
+solve()
+</code></pre>
+</div>
+</details>
+
+      <h3>⑤ c543 階梯數字：數位DP（挑戰題）</h3>
+      <p>輸入多行正整數 N（可能非常大，最多約 30 幾位數），對每一行輸出不超過 N 的階梯數字個數，答案要模 1e9+7。</p>
+      <details class="solution">
+<summary>📋 點我展開／收合完整題解程式碼</summary>
+<div class="code-wrap">
+<button class="copy-btn" onclick="copyCode(this)">📋 複製程式碼</button>
+<pre><code class="language-python"># c543 階梯數字：數位DP (Digit DP)
+import sys
+
+MOD = 10**9 + 7
+
+def count_stepping(nstr):
+    n = [int(ch) for ch in nstr]   # 把N的每一位數字拆開存成陣列
+    L = len(n)
+    # step[i][j]：i 位數、最高位（開頭）是 j 的階梯數字個數
+    step = [[1] * 10 for _ in range(L + 1)]
+    step[1][0] = 0  # 0不是階梯數字，其餘1~9的一位數各算1個（已經是預設值1）
+
+    # 遞迴關係：step[i][j] = step[i][j+1] + step[i-1][j]（尾端往前的後綴和）
+    for i in range(2, L + 1):
+        for j in range(8, -1, -1):
+            step[i][j] = (step[i][j + 1] + step[i - 1][j]) % MOD
+
+    # 神奇的地方：step[i][0] 這一格，剛好等於「所有位數比 i 少」的階梯數字總數
+    # （因為遞迴式會一路累加回去），所以不需要另外再加一次，否則會重複計算！
+    total = sum(step[L][:n[0]]) % MOD  # 開頭比N第一位小的部分（含比N位數少的所有情況）
+    is_stepping = True   # N本身是不是階梯數字
+    for i in range(1, L):
+        if n[i] < n[i - 1]:
+            is_stepping = False
+            break
+        # 前面位數已經跟N一樣，這一位選「比N這一位小」的所有可能
+        total = (total + sum(step[L - i][n[i - 1]:n[i]])) % MOD
+    if is_stepping:
+        total = (total + 1) % MOD   # N自己也是階梯數字，別忘了加1
+
+    print(total % MOD)
+
+for line in sys.stdin:
+    line = line.strip()
+    if line:
+        count_stepping(line)
+</code></pre>
+</div>
+</details>
+    </div>
+  </section>
+
+  <!-- ============ 總複習 ============ -->
+  <section class="topic" id="topic-review">
+    <p class="topic-intro">四個主題的重點濃縮版，快速複習用。</p>
+
+    <div class="card" id="summary">
+      <h2><span class="num">📝</span>重點總整理</h2>
+
+      <h3 class="review-topic">🎯 貪心演算法</h3>
+      <p><span class="emoji">🎯</span><b>核心概念</b>：每一步都選「現在看起來最好」的答案，簡單直覺，但不是每個問題都適用，用之前最好想一想或證明看看。</p>
+      <p><span class="emoji">🏥</span><b>優先佇列</b>：像急診室一樣，讓「最重要 / 最小 / 最大」的東西永遠排在最前面，方便隨時取用。</p>
+      <p><span class="emoji">📊</span><b>排序是貪心的好朋友</b>：很多貪心題目第一步都是先排序（例如照時間短到長、照結束時間早到晚）。</p>
+      <p><span class="emoji">🔍</span><b>貪心 + 二分搜</b>：遇到「最小的○○是多少」這種問題，可以先猜答案，再用貪心的方法檢查猜得對不對，越猜越準。</p>
+
+      <h3 class="review-topic">📏 掃描線演算法</h3>
+      <p><span class="emoji">📏</span>想像一條線從左滑到右，邊滑邊更新答案，常常搭配排序使用，能很有效率地解決「線段」「區間」「連續一段」的問題。</p>
+
+      <h3 class="review-topic">✂️ 分治演算法</h3>
+      <p><span class="emoji">✂️</span>把問題切一半、各自遞迴求解、再合併答案。重點通常在「合併」這一步要怎麼做才快，常跟合併排序法、逆序對等問題有關。</p>
+
+      <h3 class="review-topic">🧩 動態規劃</h3>
+      <p><span class="emoji">🧩</span>先把大問題拆成小問題（子問題），找出「答案怎麼用小問題答案算出來」的遞迴關係，再決定計算順序（由小到大）把答案存進表格，避免暴力遞迴的重複計算。</p>
+      <p><span class="emoji">🎒</span>常見經典題型：爬樓梯（一維）、方格路徑與最長共同子字串（二維）、背包問題（多加條件）、最長遞增子序列（進階＋二分搜優化）。</p>
+      <p><span class="emoji">🐢</span>學習訣竅：先求對（純遞迴），再求快（表格化）；多做經典題累積思考模式。</p>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  改寫自《AP325-Python》第4章（貪心演算法與掃瞄線演算法）、第5章（分治演算法）、第6章（動態規劃），以淺顯易懂的方式重新整理，並搭配 zerojudge.tw 題目範例。
+</footer>
+
+<!-- Prism.js：為題解程式碼加上 Python 語法顏色 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+
+<script>
+function switchTopic(id){
+  document.querySelectorAll('.topic').forEach(function(el){ el.classList.remove('active'); });
+  document.getElementById('topic-' + id).classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(function(btn){
+    btn.classList.toggle('active', btn.getAttribute('data-topic') === id);
+  });
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function copyCode(btn){
+  var wrap = btn.parentElement;
+  var codeEl = wrap.querySelector('code');
+  var text = codeEl.innerText;
+
+  function showCopied(){
+    var old = btn.textContent;
+    btn.textContent = '✅ 已複製';
+    btn.classList.add('copied');
+    setTimeout(function(){
+      btn.textContent = old;
+      btn.classList.remove('copied');
+    }, 1500);
+  }
+
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(showCopied).catch(function(){
+      fallbackCopy(codeEl, showCopied);
+    });
+  } else {
+    fallbackCopy(codeEl, showCopied);
+  }
+}
+
+function fallbackCopy(codeEl, done){
+  var range = document.createRange();
+  range.selectNode(codeEl);
+  var sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+  try{ document.execCommand('copy'); }catch(e){}
+  sel.removeAllRanges();
+  done();
+}
+</script>
+
+</body>
+</html>
