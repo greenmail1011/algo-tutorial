@@ -2,1332 +2,1047 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>演算法教學重點：貪心、掃描線、分治、動態規劃</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>動態規劃（DP）互動學習路線</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --bg:#fdf6ec;
-    --card:#ffffff;
-    --accent:#ff6b6b;
-    --accent2:#4ecdc4;
-    --accent3:#ffd166;
-    --text:#333;
-    --muted:#777;
+  :root {
+    color-scheme: light;
+    --bg:#f6f8fc; --surface:#ffffff; --ink:#18202f; --muted:#5d6a80; --line:#d5dce8;
+    --accent:#2c59e8; --accent-soft:#e6ecff; --done:#1f8a57; --done-bg:#e3f4ea; --star:#b87900;
+    --warn:#b3361f; --warn-bg:#fdeceb; --code-bg:#f3f5f9; --cell:#eef1f7; --grid:rgba(44,89,232,.07); --dep:#f2b73c;
   }
-  *{box-sizing:border-box;}
-  body{
-    margin:0;
-    font-family:"Microsoft JhengHei","PingFang TC","Helvetica Neue",Arial,sans-serif;
-    background:var(--bg);
-    color:var(--text);
-    line-height:1.7;
+  * { box-sizing:border-box; }
+  html { scroll-behavior:smooth; scroll-padding-top:16px; }
+  body {
+    margin:0; background-color:var(--bg);
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:28px 28px; color:var(--ink);
+    font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif; line-height:1.7; -webkit-font-smoothing:antialiased;
   }
-  header{
-    background:linear-gradient(135deg,#ff9a8b,#ff6b6b 40%,#ffd166);
-    color:#fff;
-    padding:36px 20px 26px;
-    text-align:center;
-  }
-  header h1{
-    margin:0 0 10px;
-    font-size:2em;
-  }
-  header p{
-    margin:0;
-    font-size:1.05em;
-    opacity:.95;
-  }
+  a { color:var(--accent); }
+  :focus-visible { outline:3px solid var(--accent); outline-offset:2px; }
+  .layout { max-width:1140px; margin:0 auto; padding:32px 20px 80px; display:grid; grid-template-columns:220px minmax(0,1fr); gap:32px; }
+  @media (max-width:900px){ .layout{ grid-template-columns:1fr; gap:18px; } }
 
-  /* Topic tab nav */
-  nav.topics{
-    position:sticky;
-    top:0;
-    z-index:50;
-    background:#ffffff;
-    box-shadow:0 3px 10px rgba(0,0,0,.08);
-    display:flex;
-    justify-content:center;
-    flex-wrap:wrap;
-    gap:8px;
-    padding:12px 10px;
-  }
-  nav.topics button{
-    border:none;
-    background:#f1f1f1;
-    color:#555;
-    font-family:inherit;
-    font-size:.95em;
-    font-weight:bold;
-    padding:10px 18px;
-    border-radius:999px;
-    cursor:pointer;
-    transition:all .15s ease;
-    white-space:nowrap;
-  }
-  nav.topics button:hover{
-    background:#ffe3d6;
-  }
-  nav.topics button.active{
-    background:linear-gradient(135deg,#ff9a8b,#ff6b6b);
-    color:#fff;
-    box-shadow:0 3px 8px rgba(255,107,107,.4);
-  }
+  nav.toc { position:sticky; top:16px; align-self:start; max-height:calc(100vh - 32px); overflow:auto; }
+  @media (max-width:900px){ nav.toc{ position:static; max-height:none; } }
+  .overall { background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:10px 14px; margin-bottom:10px; }
+  .overall b { font-size:1.25rem; }
+  .bar { height:8px; background:var(--cell); border-radius:4px; overflow:hidden; margin-top:6px; }
+  .bar i { display:block; height:100%; width:0; background:var(--done); transition:width .3s; }
+  nav.toc ol { list-style:none; margin:0; padding:0; }
+  nav.toc li a { display:grid; grid-template-columns:1fr auto; gap:8px; padding:6px 10px; border-radius:8px; color:var(--ink); text-decoration:none; font-size:.92rem; line-height:1.5; }
+  nav.toc li a:hover { background:var(--surface); }
+  nav.toc li a .n { color:var(--muted); font-variant-numeric:tabular-nums; }
+  nav.toc li a.full .n { color:var(--done); font-weight:700; }
+  nav.toc li a[aria-current="true"] { background:var(--surface); box-shadow:inset 3px 0 0 var(--accent); }
 
-  .container{
-    max-width:860px;
-    margin:26px auto 60px;
-    padding:0 16px;
-  }
-  .topic{
-    display:none;
-  }
-  .topic.active{
-    display:block;
-  }
-  .topic-intro{
-    text-align:center;
-    color:var(--muted);
-    margin:6px 0 22px;
-    font-size:.95em;
-  }
-  .progress{
-    display:flex;
-    justify-content:center;
-    gap:6px;
-    margin-bottom:22px;
-    flex-wrap:wrap;
-  }
-  .progress span{
-    background:#fff;
-    border:1.5px solid #eee;
-    color:#999;
-    font-size:.8em;
-    font-weight:bold;
-    padding:6px 12px;
-    border-radius:999px;
-  }
-  .card{
-    background:var(--card);
-    border-radius:16px;
-    box-shadow:0 6px 18px rgba(0,0,0,.08);
-    padding:26px 28px;
-    margin-bottom:26px;
-    scroll-margin-top:80px;
-  }
-  .card h2{
-    margin-top:0;
-    display:flex;
-    align-items:center;
-    gap:10px;
-    color:#e0554d;
-    font-size:1.4em;
-  }
-  .card h2 .num{
-    background:var(--accent);
-    color:#fff;
-    width:34px;
-    height:34px;
-    border-radius:50%;
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    font-size:.9em;
-    flex-shrink:0;
-  }
-  .card h2 .lvl{
-    margin-left:auto;
-    font-size:.5em;
-    background:#f0f0f0;
-    color:#888;
-    padding:4px 10px;
-    border-radius:999px;
-    font-weight:bold;
-    white-space:nowrap;
-  }
-  .card h3{
-    color:#2a9d8f;
-    margin-bottom:6px;
-  }
-  .tip{
-    background:#fff8e6;
-    border-left:5px solid var(--accent3);
-    padding:12px 16px;
-    border-radius:8px;
-    margin:14px 0;
-  }
-  .example{
-    background:#eefaf9;
-    border-left:5px solid var(--accent2);
-    padding:14px 18px;
-    border-radius:8px;
-    margin:14px 0;
-  }
-  .example .label{
-    font-weight:bold;
-    color:#1b8a80;
-    margin-bottom:6px;
-    display:block;
-  }
-  .warn{
-    background:#ffecec;
-    border-left:5px solid var(--accent);
-    padding:12px 16px;
-    border-radius:8px;
-    margin:14px 0;
-  }
-  .warn .label{
-    font-weight:bold;
-    color:#d9453d;
-    display:block;
-    margin-bottom:6px;
-  }
-  code, pre{
-    font-family:"Courier New",monospace;
-  }
-  pre{
-    background:#2d2d2d;
-    color:#f1f1f1;
-    padding:14px 16px;
-    border-radius:10px;
-    overflow-x:auto;
-    font-size:.85em;
-  }
-  details.solution{
-    background:#2d2d2d;
-    border-radius:10px;
-    margin:14px 0;
-    overflow:hidden;
-  }
-  details.solution summary{
-    cursor:pointer;
-    list-style:none;
-    padding:12px 16px;
-    background:#3a3a3a;
-    color:#ffd166;
-    font-weight:bold;
-    display:flex;
-    align-items:center;
-    user-select:none;
-  }
-  details.solution summary::-webkit-details-marker{display:none;}
-  details.solution summary::before{
-    content:"▶";
-    display:inline-block;
-    margin-right:8px;
-    transition:transform .2s;
-    font-size:.8em;
-  }
-  details.solution[open] summary::before{
-    transform:rotate(90deg);
-  }
-  details.solution .code-wrap{
-    position:relative;
-  }
-  details.solution pre{
-    border-radius:0;
-    margin:0;
-    padding-top:44px;
-  }
-  /* 讓 Prism.js 語法高亮的 <pre> 沿用我們的圓角／間距設計 */
-  pre[class*="language-"]{
-    border-radius:10px;
-    padding:14px 16px;
-    font-size:.85em;
-    margin:0;
-    text-shadow:none;
-  }
-  details.solution pre[class*="language-"]{
-    border-radius:0;
-    padding-top:44px;
-  }
-  code[class*="language-"]{
-    text-shadow:none;
-  }
-  .copy-btn{
-    position:absolute;
-    top:8px;
-    right:10px;
-    background:#4ecdc4;
-    color:#013a3a;
-    border:none;
-    border-radius:6px;
-    padding:6px 12px;
-    font-size:.8em;
-    font-weight:bold;
-    cursor:pointer;
-    font-family:inherit;
-    z-index:1;
-  }
-  .copy-btn:hover{background:#3dbdb4;}
-  .copy-btn.copied{background:#ffd166;}
-  .coins{
-    display:flex;
-    gap:10px;
-    flex-wrap:wrap;
-    margin:12px 0;
-  }
-  .coin{
-    width:56px;
-    height:56px;
-    border-radius:50%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-weight:bold;
-    color:#fff;
-    font-size:.95em;
-    box-shadow: inset 0 -4px 0 rgba(0,0,0,.15);
-  }
-  .coin.c50{background:#e63946;}
-  .coin.c10{background:#f4a261;}
-  .coin.c5{background:#2a9d8f;}
-  .coin.c1{background:#457b9d;}
-  .timeline{
-    position:relative;
-    margin:20px 0;
-    padding:10px 0;
-  }
-  .bar{
-    height:26px;
-    border-radius:6px;
-    color:#fff;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:.8em;
-    margin:6px 0;
-    position:relative;
-  }
-  footer{
-    text-align:center;
-    color:var(--muted);
-    padding:20px;
-    font-size:.85em;
-  }
-  .emoji{font-size:1.3em;margin-right:6px;}
-  .zj{
-    background:#eef2ff;
-    border:1.5px dashed #6c7ee1;
-    border-radius:10px;
-    padding:12px 16px;
-    margin:12px 0;
-  }
-  .zj .label{
-    font-weight:bold;
-    color:#4a55c7;
-    display:block;
-    margin-bottom:4px;
-  }
-  .zj a{
-    color:#3949ab;
-    font-weight:bold;
-    text-decoration:none;
-  }
-  .zj a:hover{text-decoration:underline;}
-  .stepbox{
-    display:flex;
-    gap:10px;
-    flex-wrap:wrap;
-    margin:14px 0;
-  }
-  .step{
-    flex:1;
-    min-width:140px;
-    background:#fff3e0;
-    border-radius:10px;
-    padding:12px 14px;
-    text-align:center;
-    font-weight:bold;
-    color:#b45309;
-  }
-  .arrow{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:1.4em;
-    color:#ccc;
-  }
-  .grid5{
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:4px;
-    max-width:280px;
-    margin:14px auto;
-  }
-  .grid5 div{
-    background:#e0f2f1;
-    border-radius:6px;
-    padding:10px 0;
-    text-align:center;
-    font-weight:bold;
-    color:#00695c;
-  }
-  .review-topic{
-    color:#e0554d;
-    margin:22px 0 6px;
-  }
-  .review-topic:first-child{
-    margin-top:0;
-  }
+  header h1 { margin:0 0 6px; font-size:clamp(1.8rem,4.5vw,2.6rem); font-weight:900; line-height:1.3; }
+  header p { margin:0; color:var(--muted); }
+
+  section.stage { margin-top:48px; }
+  section.stage > h2 { margin:0; font-size:clamp(1.4rem,3.2vw,1.8rem); font-weight:900; line-height:1.4; }
+  .idea { margin:4px 0 14px; color:var(--muted); font-size:1.02rem; }
+
+  .demo { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px; margin:12px 0; }
+  .demo .cap { font-weight:700; margin:0 0 10px; }
+  .row { display:flex; flex-wrap:wrap; align-items:center; gap:10px 16px; margin-bottom:12px; }
+  .row label { display:inline-flex; align-items:center; gap:8px; }
+  input[type=range] { accent-color:var(--accent); width:min(220px,50vw); }
+  .btn { font:inherit; font-size:.9rem; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:5px 14px; cursor:pointer; }
+  .btn:hover:not(:disabled) { border-color:var(--accent); color:var(--accent); }
+  .btn:disabled { opacity:.4; cursor:default; }
+  .btn.main { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .btn.main:hover:not(:disabled) { color:#fff; opacity:.9; }
+  .seg { display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+  .seg button { font:inherit; font-size:.9rem; border:0; background:var(--surface); padding:5px 14px; cursor:pointer; color:var(--ink); }
+  .seg button + button { border-left:1px solid var(--line); }
+  .seg button.on { background:var(--accent); color:#fff; }
+  .chips { display:inline-flex; flex-wrap:wrap; gap:6px; }
+  .chip { font:inherit; font-weight:700; min-width:40px; border:2px solid var(--line); background:var(--surface); border-radius:20px; padding:2px 12px; cursor:pointer; color:var(--muted); }
+  .chip.on { border-color:var(--accent); background:var(--accent-soft); color:var(--accent); }
+  .ctl { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .dmsg { min-height:3.4em; margin-top:10px; padding:8px 12px; background:var(--code-bg); border-radius:8px; font-size:.95rem; }
+  .dmsg b { color:var(--accent); }
+
+  /* 表格 */
+  .dpwrap { overflow-x:auto; padding-bottom:6px; }
+  table.dp { border-collapse:separate; border-spacing:3px; }
+  table.dp th { font-weight:500; color:var(--muted); font-size:.85rem; min-width:30px; padding:0 4px; }
+  table.dp td { min-width:38px; height:38px; text-align:center; background:var(--cell); border-radius:6px; font-weight:700; font-variant-numeric:tabular-nums; border:2px solid transparent; line-height:1.15; padding:0 4px; transition:background-color .25s,border-color .25s; }
+  table.dp td .sub { display:block; font-size:.7rem; color:var(--muted); font-weight:500; }
+  table.dp td.dead { background:transparent; }
+  table.dp td.fill { background:var(--surface); border-color:var(--line); }
+  table.dp td.dep { border-color:var(--dep); background:#fff7e0; }
+  table.dp td.cur { background:var(--accent); color:#fff; border-color:var(--accent); }
+  table.dp td.cur .sub { color:#dfe7ff; }
+  table.dp td.path { background:var(--done); color:#fff; border-color:var(--done); }
+  table.dp td.path .sub { color:#d6f2e3; }
+  .grid5 table.dp td { min-width:56px; height:56px; }
+
+  /* SVG */
+  svg { max-width:100%; height:auto; display:block; }
+  .svgwrap { overflow-x:auto; }
+  svg text { font-family:inherit; }
+  .sv-t { fill:var(--ink); font-size:13px; font-weight:700; text-anchor:middle; }
+  .sv-tw { fill:#fff; font-size:13px; font-weight:700; text-anchor:middle; }
+  .sv-ts { fill:var(--muted); font-size:11px; text-anchor:middle; }
+  .sv-pos { fill:#9db2f6; } .sv-neg { fill:#f4adad; }
+  .sv-seg { fill:var(--accent-soft); } .sv-best { fill:var(--done-bg); }
+  .sv-cur { stroke:var(--accent); stroke-width:3; }
+  .sv-cand { stroke:var(--dep); stroke-width:3; }
+  .sv-chain { fill:#59b987; }
+  .sv-box { fill:var(--cell); } .sv-boxon { fill:var(--surface); stroke:var(--line); } .sv-boxcur { fill:var(--accent); }
+  .sv-line { stroke:var(--muted); stroke-width:1; }
+  .sv-arrow { stroke:var(--accent); stroke-width:2.5; fill:none; }
+  .sv-circ { fill:var(--accent-soft); stroke:var(--accent); stroke-width:3; }
+
+  .stats { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .badge { background:var(--code-bg); border-radius:8px; padding:4px 12px; font-size:.92rem; }
+  .badge b { color:var(--accent); font-size:1.05rem; }
+  .node rect { transition:opacity .15s; }
+  .tree-dim { opacity:.18; }
+
+  .lists { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:6px; }
+  .lists h4 { margin:0 0 6px; font-size:.95rem; }
+  .lists .box { background:var(--code-bg); border-radius:8px; padding:8px; min-height:60px; display:flex; flex-wrap:wrap; gap:5px; align-content:flex-start; }
+  .bitchip { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.9rem; padding:1px 8px; border-radius:6px; background:var(--surface); border:1px solid var(--line); }
+  .bitchip.z { border-color:#9db2f6; } .bitchip.o { border-color:#f08c00; background:#fff4e0; }
+  .bits-top { display:grid; grid-template-columns:minmax(0,380px) minmax(0,1fr); gap:16px; align-items:center; }
+  @media (max-width:760px){ .bits-top{ grid-template-columns:1fr; } }
+
+  /* 公式列 */
+  dl.fm { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:8px; margin:12px 0; }
+  dl.fm div { background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:8px 12px; }
+  dl.fm dt { font-size:.82rem; color:var(--accent); font-weight:700; }
+  dl.fm dd { margin:0; font-size:.92rem; }
+  code { font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; font-size:.88rem; }
+  dd code { background:var(--code-bg); padding:1px 6px; border-radius:4px; }
+
+  details { background:var(--surface); border:1px solid var(--line); border-radius:10px; margin:10px 0; }
+  details > summary { cursor:pointer; padding:9px 14px; font-weight:700; list-style:none; }
+  details > summary::-webkit-details-marker { display:none; }
+  details > summary::before { content:"＋ "; color:var(--accent); }
+  details[open] > summary::before { content:"－ "; }
+  details > div { padding:0 14px 12px; }
+  details h4 { margin:12px 0 4px; font-size:.92rem; color:var(--muted); }
+  pre { background:var(--code-bg); border:1px solid var(--line); border-radius:8px; padding:12px 14px; overflow-x:auto; margin:6px 0; line-height:1.6; }
+  pre code { background:none; }
+  details.traps ul { margin:0; padding-left:1.2em; }
+  details.traps li { margin:2px 0; }
+
+  /* 翻牌 */
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; }
+  .flip { perspective:900px; border:0; background:none; padding:0; cursor:pointer; font:inherit; text-align:left; height:118px; color:var(--ink); }
+  .flip .in { position:relative; width:100%; height:100%; transition:transform .5s; transform-style:preserve-3d; }
+  .flip.on .in { transform:rotateY(180deg); }
+  .face { position:absolute; top:0; left:0; right:0; bottom:0; backface-visibility:hidden; -webkit-backface-visibility:hidden; border-radius:12px; padding:14px 16px; display:flex; align-items:center; border:1px solid var(--line); }
+  .face.front { background:var(--surface); font-weight:700; }
+  .face.back { background:var(--accent-soft); border-color:var(--accent); transform:rotateY(180deg); font-size:.95rem; }
+
+  .five { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:8px; margin:12px 0; }
+  .five div { background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:8px 12px; }
+  .five b { display:block; color:var(--accent); }
+  .five span { font-size:.9rem; color:var(--muted); }
+
+  /* 狀態壓縮 */
+  .people { display:flex; flex-wrap:wrap; gap:10px; }
+  .person { font:inherit; font-weight:900; font-size:1.2rem; width:60px; padding:6px 0 4px; border:2px solid var(--line); background:var(--surface); border-radius:12px; cursor:pointer; color:var(--muted); }
+  .person small { display:block; font-size:.72rem; font-weight:500; }
+  .person.on { border-color:var(--accent); background:var(--accent-soft); color:var(--accent); }
+  .maskout { margin:12px 0; display:grid; gap:4px; }
+  .bin { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:1.3rem; letter-spacing:.15em; }
+  .grid32 { display:grid; grid-template-columns:repeat(auto-fill,minmax(44px,1fr)); gap:4px; }
+  .gcell { font:inherit; font-size:.85rem; border:1px solid var(--line); background:var(--cell); border-radius:6px; padding:4px 0; cursor:pointer; color:var(--ink); }
+  .gcell.cur { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .mini { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px; margin-top:12px; }
+  .mini div { background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:10px 14px; }
+  .mini b { display:block; }
+  .mini span { color:var(--muted); font-size:.92rem; }
+
+  /* 題目 */
+  .practice h3 { margin:22px 0 0; font-size:1.05rem; }
+  ul.plist { list-style:none; padding:0; margin:8px 0 0; background:var(--surface); border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+  ul.plist li { display:grid; grid-template-columns:28px 1fr; gap:12px; padding:10px 16px; border-top:1px solid var(--line); transition:background-color .2s; }
+  ul.plist li:first-child { border-top:0; }
+  ul.plist li.done { background:var(--done-bg); }
+  .ck { position:relative; width:28px; height:28px; }
+  .ck input { position:absolute; opacity:0; width:28px; height:28px; margin:0; cursor:pointer; }
+  .ck .box { width:24px; height:24px; margin-top:2px; border:2px solid var(--muted); border-radius:5px; display:grid; place-items:center; background:var(--surface); }
+  .ck input:focus-visible + .box { outline:3px solid var(--accent); outline-offset:2px; }
+  li.done .ck .box { background:var(--done); border-color:var(--done); }
+  .ck svg { width:14px; height:14px; stroke:#fff; stroke-width:3; fill:none; opacity:0; }
+  li.done .ck svg { opacity:1; }
+  .phead { display:flex; flex-wrap:wrap; align-items:baseline; gap:0 10px; }
+  .pid { font-weight:700; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .phead a { font-weight:700; text-decoration:none; }
+  .phead a:hover { text-decoration:underline; }
+  .star { color:var(--star); font-size:.85rem; font-weight:700; }
+  .focus { margin:0; color:var(--muted); font-size:.92rem; line-height:1.55; }
+
+  footer { margin-top:52px; color:var(--muted); font-size:.9rem; border-top:1px solid var(--line); padding-top:14px; }
+  footer p { margin:0 0 6px; }
+  .reset { margin-top:8px; }
+  @media (prefers-reduced-motion:reduce){ *{ transition:none !important; scroll-behavior:auto !important; } }
 </style>
 </head>
 <body>
+<div class="layout">
 
-<header>
-  <h1>🎯 演算法教學重點整理</h1>
-  <p>貪心、掃描線、分治、動態規劃——點選下面的主題，就能看到那個主題由淺入深的教學內容！</p>
-</header>
-
-<nav class="topics">
-  <button class="tab-btn active" data-topic="greedy" onclick="switchTopic('greedy')">🎯 貪心演算法</button>
-  <button class="tab-btn" data-topic="sweep" onclick="switchTopic('sweep')">📏 掃描線演算法</button>
-  <button class="tab-btn" data-topic="divide" onclick="switchTopic('divide')">✂️ 分治演算法</button>
-  <button class="tab-btn" data-topic="dp" onclick="switchTopic('dp')">🧩 動態規劃</button>
-  <button class="tab-btn" data-topic="review" onclick="switchTopic('review')">📝 總複習</button>
+<nav class="toc" aria-label="章節目錄">
+  <div class="overall"><div><b id="ov-num">0 / 0</b> 題完成</div><div class="bar"><i id="ov-bar"></i></div></div>
+  <ol id="toc-list"></ol>
 </nav>
 
-<div class="container">
+<main>
+<header>
+  <h1>動態規劃，動手玩一遍</h1>
+  <p>每一關一個想法。先玩互動表，再看模板，最後練題。</p>
+</header>
 
-  <!-- ============ 貪心演算法 ============ -->
-  <section class="topic active" id="topic-greedy">
-    <p class="topic-intro">貪心演算法：由淺入深的 5 個重點，一步步看懂「每次都選當下最好」的解題思路。</p>
+<!-- 第 0 關 -->
+<section class="stage" id="s0" data-title="第 0 關　為什麼要 DP">
+  <h2>第 0 關　為什麼要 DP</h2>
+  <p class="idea">同一個小問題一再出現，就把答案記下來。</p>
+  <div class="demo" id="demo-fib"></div>
+  <div class="five">
+    <div><b>記什麼？</b><span>dp[…] 代表什麼</span></div>
+    <div><b>怎麼來？</b><span>看「最後一步」</span></div>
+    <div><b>從哪開始？</b><span>最小情況的答案</span></div>
+    <div><b>誰先算？</b><span>依賴的格子先有答案</span></div>
+    <div><b>答案在哪？</b><span>最後一格或全表最大</span></div>
+  </div>
+</section>
 
-    <div class="card" id="greedy">
-      <h2><span class="num">1</span>什麼是貪心演算法？<span class="lvl">入門</span></h2>
-      <p>
-        「貪心演算法」聽起來很兇，其實意思很簡單：<b>每一步都選「現在看起來最好」的選擇，選了就不後悔、不回頭</b>。
-      </p>
-      <div class="example">
-        <span class="label">🍬 生活例子：吃到飽夾菜</span>
-        去吃到飽，你可能會想「先夾我現在最想吃的東西」，夾一輪之後再夾下一輪最想吃的。這就是貪心：每一步都選當下最好的，不會想太多以後的事。
-      </div>
+<!-- 第 1 關 -->
+<section class="stage" id="s1" data-title="第 1 關　一維遞推">
+  <h2>第 1 關　一維遞推</h2>
+  <p class="idea">一個陣列，由小算到大。</p>
+  <div class="demo" id="demo-stairs"></div>
+  <dl class="fm">
+    <div><dt>狀態</dt><dd><code>dp[i]</code> 走到第 i 階的方法數</dd></div>
+    <div><dt>轉移</dt><dd><code>dp[i] = dp[i-1] + dp[i-2]</code></dd></div>
+    <div><dt>初始</dt><dd><code>dp[0] = dp[1] = 1</code></dd></div>
+    <div><dt>答案</dt><dd><code>dp[n]</code></dd></div>
+  </dl>
+  <details class="code"><summary>Python 模板</summary><div>
+    <h4>基本版</h4><pre><code># 爬樓梯：每次走 1 階或 2 階，走到第 n 階有幾種走法
+n = int(input())                    # 讀入階數 n
+dp = [0] * (n + 2)                  # dp[i] = 走到第 i 階的方法數，多開兩格避免 n 很小時出界
+dp[0] = 1                           # 站在地面算 1 種
+dp[1] = 1                           # 走到第 1 階只有 1 種
+for i in range(2, n + 1):           # 由小到大，保證 dp[i-1]、dp[i-2] 已經算好
+    dp[i] = dp[i - 1] + dp[i - 2]   # 最後一步是走 1 階或走 2 階
+print(dp[n])                        # 答案在 dp[n]</code></pre>
+    <h4>只留兩個變數</h4><pre><code>a, b = 1, 1                  # a 代表 dp[i-2]，b 代表 dp[i-1]
+for i in range(2, n + 1):    # 往後推到第 n 階
+    a, b = b, a + b          # 新的 b 是舊 a + 舊 b，新的 a 是舊 b
+print(b)                     # b 就是 dp[n]</code></pre>
+  </div></details>
+  <details class="traps"><summary>常見的坑</summary><div><ul>
+    <li>n 很小時，陣列要多開幾格避免出界</li><li>多筆查詢：先一次建表</li><li>看清楚範圍與是否要取模</li></ul></div></details>
+  <div class="practice"><h3>練習題</h3><ul class="plist" data-stage="1"></ul></div>
+</section>
 
-      <h3>換代幣的例子</h3>
-      <p>
-        少林寺有四種代幣：<b>50元、10元、5元、1元</b>。如果要換 123 元，最少要用幾個代幣？
-      </p>
-      <div class="coins">
-        <div class="coin c50">50</div>
-        <div class="coin c10">10</div>
-        <div class="coin c5">5</div>
-        <div class="coin c1">1</div>
-      </div>
-      <p>
-        貪心的做法：<b>先盡量用最大的面額換</b>，換不下去了再換小一點的。
-      </p>
-      <div class="example">
-        <span class="label">💰 換 123 元</span>
-        123 = 50×2（用掉100） + 10×2（用掉20） + 1×3（用掉3）<br>
-        總共用了 2+2+3 = <b>7 個代幣</b>，這是最少的方法！
-      </div>
-      <p>這個方法之所以行得通，是因為 50、10、5、1 這幾種面額搭配得剛剛好（比如 5 個 1 元就能換 1 個 5 元），所以每次拿最大的都不會吃虧。</p>
-    </div>
+<!-- 第 2 關 -->
+<section class="stage" id="s2" data-title="第 2 關　加狀態維度">
+  <h2>第 2 關　加一個狀態維度</h2>
+  <p class="idea">一個編號不夠用，就多記一項資訊。例：長度 n 的 0/1 字串，不能有連續兩個 1。</p>
+  <div class="demo" id="demo-bits"></div>
+  <dl class="fm">
+    <div><dt>狀態</dt><dd><code>dp[i][s]</code> 結尾是 s 的個數</dd></div>
+    <div><dt>轉移</dt><dd><code>dp[i][0] = dp[i-1][0] + dp[i-1][1]</code><br><code>dp[i][1] = dp[i-1][0]</code></dd></div>
+    <div><dt>答案</dt><dd><code>dp[n][0] + dp[n][1]</code></dd></div>
+  </dl>
+  <details class="code"><summary>Python 模板</summary><div><pre><code># 長度 n 的 0/1 字串，不能有連續兩個 1，共有幾種？
+n = int(input())            # 讀入長度 n
+end0 = 1                    # 長度 1 且結尾是 0 的字串數（"0"）
+end1 = 1                    # 長度 1 且結尾是 1 的字串數（"1"）
+for i in range(2, n + 1):   # 一格一格往後長
+    new0 = end0 + end1      # 結尾放 0：前面結尾是什麼都可以
+    new1 = end0             # 結尾放 1：前面一定要是 0
+    end0 = new0             # 更新兩個狀態
+    end1 = new1
+print(end0 + end1)          # 兩種結尾的總和就是答案</code></pre></div></details>
+  <details class="traps"><summary>常見的坑</summary><div><ul>
+    <li>更新時用舊值算新值，先存到暫存變數再覆蓋</li><li>答案很大就邊算邊取模</li></ul></div></details>
+  <div class="practice"><h3>練習題</h3><ul class="plist" data-stage="2"></ul></div>
+</section>
 
-    <div class="card" id="greedy-wrong">
-      <h2><span class="num">2</span>貪心不是每次都對！<span class="lvl">入門</span></h2>
-      <div class="warn">
-        <span class="label">⚠️ 小心！換個代幣面額，貪心就會出錯</span>
-        如果代幣面額變成 <b>1、4、5</b>，要換 8 元：
-        <ul>
-          <li>貪心做法：先拿一個 5 元，剩 3 元只能拿 3 個 1 元 → 用了 <b>4 個</b>代幣</li>
-          <li>但其實用兩個 4 元就湊成 8 元了 → 只要 <b>2 個</b>代幣！</li>
-        </ul>
-        所以貪心找到的答案是「4 個」，比正確答案「2 個」還要多，貪心在這裡失敗了。
-      </div>
-      <p>
-        這告訴我們一個很重要的觀念：<b>用貪心解題前，要先想清楚「每次選當下最好的」是不是真的能保證最後結果最好</b>。有些問題可以證明貪心一定對，有些不行，需要動腦筋想一想或用其他方法（例如動態規劃）。
-      </p>
-    </div>
+<!-- 第 3 關 -->
+<section class="stage" id="s3" data-title="第 3 關　以第 i 個結尾">
+  <h2>第 3 關　「以第 i 個結尾」</h2>
+  <p class="idea">dp[i] = 一定要以第 i 個結尾的最佳值；答案取全部的最大，不一定是最後一格。</p>
+  <div class="demo"><p class="cap">最大連續區間和（Kadane）</p><div id="demo-kadane"></div></div>
+  <div class="demo"><p class="cap">最長遞增子序列（LIS）</p><div id="demo-lis"></div></div>
+  <dl class="fm">
+    <div><dt>Kadane 轉移</dt><dd><code>dp[i] = max(dp[i-1], 0) + a[i]</code></dd></div>
+    <div><dt>LIS 轉移</dt><dd><code>dp[i] = max(dp[j]) + 1</code>，j&lt;i 且 a[j]&lt;a[i]</dd></div>
+    <div><dt>答案</dt><dd><code>max(dp)</code></dd></div>
+  </dl>
+  <details class="code"><summary>Python 模板</summary><div>
+    <h4>Kadane</h4><pre><code>n = int(input())                      # 讀入數字個數
+a = list(map(int, input().split()))   # 讀入 n 個數字
+best = a[0]                           # 目前最大的連續和，答案可能是負數，所以不能從 0 開始
+cur = a[0]                            # cur 代表「以目前這格結尾」的最大連續和
+for i in range(1, n):                 # 從第二個數字開始
+    if cur &gt; 0:                       # 前面累積的和是正的，接上去有幫助
+        cur = cur + a[i]
+    else:                             # 前面是 0 或負的，不如從這格重新開始
+        cur = a[i]
+    if cur &gt; best:                    # 答案是所有「結尾」中最大的
+        best = cur
+print(best)                           # 輸出最大連續和</code></pre>
+    <h4>LIS（O(n²)）</h4><pre><code>n = len(a)                      # a 是已經讀好的數列
+dp = [1] * n                    # 每個數字自己就是長度 1 的遞增子序列
+for i in range(n):              # 依序決定每個結尾
+    for j in range(i):          # 看前面每個 j
+        if a[j] &lt; a[i]:         # a[i] 可以接在 a[j] 後面
+            if dp[j] + 1 &gt; dp[i]:
+                dp[i] = dp[j] + 1
+print(max(dp))                  # 答案是所有結尾中最長的</code></pre>
+  </div></details>
+  <details class="traps"><summary>常見的坑</summary><div><ul>
+    <li>答案可能是負數，初始值別設 0</li><li>答案取 max(dp)，不是 dp[n-1]</li><li>嚴格遞增的二分搜用 bisect_left</li></ul></div></details>
+  <div class="practice"><h3>練習題</h3><ul class="plist" data-stage="3"></ul></div>
+</section>
 
-    <div class="card" id="pq">
-      <h2><span class="num">3</span>優先佇列：誰最急就先處理誰<span class="lvl">基礎</span></h2>
-      <p>
-        排隊本來是「先來先服務」，但醫院掛號不是這樣，<b>病情越緊急的人，會被排到越前面</b>，這種「依照重要程度排隊」的方式，就叫做<b>優先佇列（Priority Queue）</b>。
-      </p>
-      <div class="example">
-        <span class="label">🏥 生活例子：急診室</span>
-        急診室不是誰先到就先看，而是最嚴重的病人優先。優先佇列就像一個會自動幫你把「最重要/最小/最大」的東西放在最前面的排隊系統，隨時有新的人加進來，它也能馬上重新排好順序。
-      </div>
-      <p>
-        在程式裡，優先佇列常常用一種叫「堆（heap）」的方法實作，Python 有現成的工具（<code>heapq</code>）可以直接用，不用自己蓋輪子。
-      </p>
-    </div>
+<!-- 第 4 關 -->
+<section class="stage" id="s4" data-title="第 4 關　背包與錢幣">
+  <h2>第 4 關　背包與錢幣</h2>
+  <p class="idea">金額（容量）當狀態；內層迴圈的方向，決定每個物品能用幾次。</p>
+  <div class="demo"><p class="cap">① 湊零錢：貪心 vs DP</p><div id="demo-coin"></div></div>
+  <div class="demo"><p class="cap">② 迴圈方向：同一個物品（重 3、值 4），容量 9</p><div id="demo-dir"></div></div>
+  <dl class="fm">
+    <div><dt>最少個數</dt><dd><code>dp[j] = min(dp[j], dp[j-c] + 1)</code></dd></div>
+    <div><dt>方法數</dt><dd><code>dp[j] += dp[j-c]</code>，面額放外層</dd></div>
+    <div><dt>0/1 背包</dt><dd><code>dp[j] = max(dp[j], dp[j-w] + v)</code></dd></div>
+    <div><dt>內層方向</dt><dd>無限：由小到大；0/1：由大到小</dd></div>
+  </dl>
+  <details class="code"><summary>Python 模板</summary><div>
+    <h4>無限背包：最少硬幣數</h4><pre><code>INF = 10 ** 9                           # 代表「湊不出來」的很大數字
+dp = [INF] * (c + 1)                    # dp[j] = 湊出金額 j 最少需要幾個硬幣
+dp[0] = 0                               # 湊 0 元需要 0 個硬幣
+for coin in coins:                      # 一種面額一種面額處理
+    for j in range(coin, c + 1):        # 由小到大：允許同一種硬幣重複使用
+        if dp[j - coin] + 1 &lt; dp[j]:    # 用一個 coin 比目前更少
+            dp[j] = dp[j - coin] + 1
+print(dp[c])                            # 若仍是 INF 代表無解</code></pre>
+    <h4>無限背包：方法數</h4><pre><code>dp = [0] * (c + 1)                  # dp[j] = 湊出金額 j 的組合數
+dp[0] = 1                           # 湊 0 元有 1 種（什麼都不拿）
+for coin in coins:                  # 面額放在外層：每種組合只會被數到一次（不計順序）
+    for j in range(coin, c + 1):    # 由小到大：可重複使用
+        dp[j] = dp[j] + dp[j - coin]</code></pre>
+    <h4>0/1 背包：最大價值</h4><pre><code>W = 100                                  # 背包容量
+dp = [0] * (W + 1)                       # dp[j] = 容量 j 以內的最大價值，全部先設 0
+for w, v in items:                       # items 是 (重量, 價值) 的清單，一個物品處理一次
+    for j in range(W, w - 1, -1):        # 由大到小：確保同一個物品不會被用兩次
+        if dp[j - w] + v &gt; dp[j]:        # 放進這個物品比較划算
+            dp[j] = dp[j - w] + v
+print(dp[W])</code></pre>
+    <h4>0/1 背包：能不能湊出（位元表）</h4><pre><code>dp = 1                      # 用一個大整數當位元表：第 k 個位元是 1 代表「長度 k 湊得出來」
+for m in ms:                # 每根金屬棒最多用一次
+    dp = dp | (dp &lt;&lt; m)     # 原本能湊出的長度，加上 m 之後也能湊出
+if (dp &gt;&gt; n) &amp; 1:           # 檢查第 n 個位元是不是 1
+    print("YES")
+else:
+    print("NO")</code></pre>
+  </div></details>
+  <details class="traps"><summary>常見的坑</summary><div><ul>
+    <li>0/1 背包內層改成由小到大，就變成無限背包</li><li>最少個數的 dp 要先設成很大的數，不是 0</li><li>面額沒有規律時，貪心可能是錯的</li></ul></div></details>
+  <div class="practice"><h3>練習題</h3><ul class="plist" data-stage="4"></ul></div>
+</section>
 
-    <div class="card" id="examples">
-      <h2><span class="num">4</span>貪心演算法的經典例子<span class="lvl">進階</span></h2>
-
-      <h3>🥋 比武配對：怎麼贏最多場</h3>
-      <p>
-        兩隊高手要一對一比武，戰力高的贏。你可以自己安排誰打誰，希望贏越多場越好。
-      </p>
-      <div class="example">
-        <span class="label">做法</span>
-        每次找「我方最弱的人」和「對方最弱的人」比：如果我方能贏，就派他上場；如果贏不了，這個弱者就先放棄，換下一個弱者試試看。
-      </div>
-
-      <h3>⏳ 排隊做事：怎麼讓大家等最少</h3>
-      <p>
-        有好幾件工作要做，每件花的時間不同，大家都要等到輪到自己才能開始。要怎麼排順序，讓「每個人等待時間加起來」最少？
-      </p>
-      <div class="example">
-        <span class="label">做法：越快做完的，排越前面</span>
-        比如四件工作要花的時間是 3、1、3、4 分鐘。<br>
-        如果照 (1,3,3,4) 的順序做，完成時間分別是 1、4、7、11，加起來 23 分鐘，這是最短的！<br>
-        道理很簡單：先做「花時間少」的事，可以讓後面排隊的人少等一點。
-      </div>
-
-      <h3>🎬 排電影場次：怎麼看最多場</h3>
-      <p>
-        有很多場活動，每場都有開始和結束時間，同時間只能參加一場，你想參加越多場越好。
-      </p>
-      <div class="example">
-        <span class="label">做法：先挑「最早結束」的那一場</span>
-        為什麼？因為越早結束，留給你之後可以參加的場次就越多！挑完一場後，跳過所有跟它時間重疊的場次，繼續挑下一個最早結束的。
-      </div>
-
-      <div class="timeline">
-        <div class="bar" style="width:40%;background:#e76f51;">場次A 1~4</div>
-        <div class="bar" style="width:30%;background:#2a9d8f;">場次B 0~3 ✅先選</div>
-        <div class="bar" style="width:10%;background:#e9c46a;">場次C 3~4</div>
-        <div class="bar" style="width:20%;background:#2a9d8f;margin-left:35%;">場次D 4~6 ✅再選</div>
-      </div>
-      <p>上面例子中，先選「B (0~3)」再選「D (4~6)」，剛好可以參加兩場，是最多的了。</p>
-    </div>
-
-    <div class="card" id="binary">
-      <h2><span class="num">5</span>貪心 + 二分搜：先猜答案再檢查<span class="lvl">進階</span></h2>
-      <p>
-        有些題目問「最小可以是多少」，如果直接想很難算，我們可以改用「猜答案」的方式：
-      </p>
-      <div class="example">
-        <span class="label">🏗️ 生活例子：蓋幾座基地台才夠涵蓋大家？</span>
-        假設題目問：基地台的訊號範圍最小要多大，才能用固定數量的基地台涵蓋所有的點？<br><br>
-        做法是：<b>先猜一個訊號範圍</b>，然後用貪心的方法檢查「這個範圍夠不夠用」——如果基地台數量夠，代表範圍可以再小一點；如果不夠，代表要再大一點。像玩「猜數字」遊戲一樣，越猜越接近正確答案，這就是<b>二分搜</b>。
-      </div>
-      <p>
-        簡單說：<b>猜一個答案 → 用貪心的方法檢查行不行 → 根據結果調整猜的方向</b>，這樣可以很快找到最好的答案。
-      </p>
-    </div>
-
-    <div class="card" id="greedy-practice">
-      <h2><span class="num">🏆</span>練習題與題解<span class="lvl">由淺入深</span></h2>
-
-      <div class="zj">
-        <span class="label">① 入門：找零錢 / 換代幣</span>
-        <a href="https://zerojudge.tw/ShowProblem?problemid=a675" target="_blank">a675. 00166 - Making Change</a> —— 練習「盡量用大面額」的基本貪心概念。
-      </div>
-
-      <div class="zj">
-        <span class="label">② 基礎：線段覆蓋（最少線段蓋住整個區間）</span>
-        <a href="https://zerojudge.tw/ShowProblem?problemid=e576" target="_blank">e576. 10020 - Minimal Coverage</a> —— 每次選「能延伸最遠」的線段，是本文「先猜答案」之外，貪心處理線段覆蓋的另一種經典寫法。
-      </div>
-
-      <div class="zj">
-        <span class="label">③ 進階：貪心 + 二分搜（基地台）</span>
-        <a href="https://zerojudge.tw/ShowProblem?problemid=c575" target="_blank">c575. APCS 2017-0304-4基地台</a> —— 就是本節「猜答案再檢查」的原題，難度中偏高，非常適合當作代表題。
-      </div>
-
-      <h3>e576 線段覆蓋：完整題解</h3>
-      <p>
-        題目：給定多組線段 [Li, Ri]，用最少數量的線段完全覆蓋 [0, M]，如果無法覆蓋則輸出 0。
-      </p>
-      <details class="solution">
-<summary>📋 點我展開／收合完整題解程式碼</summary>
-<div class="code-wrap">
-<button class="copy-btn" onclick="copyCode(this)">📋 複製程式碼</button>
-<pre><code class="language-python"># e576 線段覆蓋：貪心（每次選「能延伸最遠」的線段）
-import sys
-
-def solve():
-    data = sys.stdin.read().split()
-    idx = 0
-    T = int(data[idx]); idx += 1   # 測資組數
-    outputs = []
-    for _ in range(T):
-        m = int(data[idx]); idx += 1   # 要覆蓋 [0, m]
-        segs = []
-        while True:
-            l, r = int(data[idx]), int(data[idx+1]); idx += 2
-            if l == 0 and r == 0:   # l=r=0 代表這組線段輸入結束
-                break
-            segs.append((l, r))
-        segs.sort()   # 依左端點排序，才能由左到右掃描
-
-        i = 0
-        n = len(segs)
-        current_end = 0   # 目前已經覆蓋到哪裡
-        selected = []
-        ok = True
-        while current_end < m:
-            best_r = current_end
-            best_idx = -1
-            # 在「左端點 <= 目前覆蓋到的位置」的線段中，挑「能延伸最遠」的那條
-            while i < n and segs[i][0] <= current_end:
-                if segs[i][1] > best_r:
-                    best_r = segs[i][1]
-                    best_idx = i
-                i += 1
-            if best_idx == -1:
-                ok = False   # 沒有線段能再往右延伸，代表蓋不滿 [0, m]
-                break
-            selected.append(segs[best_idx])
-            current_end = best_r
-
-        if not ok:
-            outputs.append("0")
+<!-- 第 5 關 -->
+<section class="stage" id="s5" data-title="第 5 關　二維網格">
+  <h2>第 5 關　二維網格</h2>
+  <p class="idea">兩個座標，每一格由「上面」或「左邊」推來。</p>
+  <div class="demo grid5" id="demo-grid"></div>
+  <dl class="fm">
+    <div><dt>狀態</dt><dd><code>dp[i][j]</code> 走到 (i, j) 的最小路徑和</dd></div>
+    <div><dt>轉移</dt><dd><code>min(dp[i-1][j], dp[i][j-1]) + g[i][j]</code></dd></div>
+    <div><dt>答案</dt><dd><code>dp[n-1][m-1]</code></dd></div>
+  </dl>
+  <details class="code"><summary>Python 模板</summary><div><pre><code>n, m = map(int, input().split())                      # 讀入列數 n、行數 m
+g = [list(map(int, input().split())) for _ in range(n)]   # 讀入整張地圖
+INF = 10 ** 9                                         # 很大的數字，代表「不存在的來源」
+dp = [[INF] * m for _ in range(n)]                    # dp[i][j] = 走到 (i, j) 的最小路徑和
+for i in range(n):                                    # 由上到下
+    for j in range(m):                                # 由左到右
+        if i == 0 and j == 0:
+            dp[i][j] = g[i][j]                        # 起點本身
         else:
-            lines = [str(len(selected))]
-            for l, r in sorted(selected):
-                lines.append(f"{l} {r}")
-            outputs.append("\n".join(lines))
-    print("\n\n".join(outputs))
+            best = INF                                # 先假設兩個來源都不存在
+            if i &gt; 0 and dp[i - 1][j] &lt; best:        # 從上面來
+                best = dp[i - 1][j]
+            if j &gt; 0 and dp[i][j - 1] &lt; best:        # 從左邊來
+                best = dp[i][j - 1]
+            dp[i][j] = best + g[i][j]                 # 加上這一格的數字
+print(dp[n - 1][m - 1])                               # 終點的答案</code></pre></div></details>
+  <details class="traps"><summary>常見的坑</summary><div><ul>
+    <li>第一列、第一行沒有上面或左邊，要先判斷</li><li>最大路徑和：缺席的來源設成負無限大</li><li>多組測資要重置 dp</li></ul></div></details>
+  <div class="practice"><h3>練習題</h3><ul class="plist" data-stage="5"></ul></div>
+</section>
 
-solve()
-</code></pre>
-</div>
-</details>
-
-      <h3>c575 基地台：完整題解</h3>
-      <p>
-        題目：在數線上有 N 個服務點，架設 K 座直徑相同的基地台，每座基地台可以涵蓋一段連續區間，求可以涵蓋所有服務點的最小直徑。
-      </p>
-      <details class="solution">
-<summary>📋 點我展開／收合完整題解程式碼</summary>
-<div class="code-wrap">
-<button class="copy-btn" onclick="copyCode(this)">📋 複製程式碼</button>
-<pre><code class="language-python"># c575 基地台：貪心 + 二分搜
-# 讀入服務點數量 n 與基地台數量 k
-n, k = map(int, input().split())
-p = list(map(int, input().split()))
-p.sort()  # 先排序，才能從左到右用貪心的方式檢查
-
-# 檢查：如果每座基地台的直徑是 d，是否可以用不超過 k 座基地台涵蓋所有點
-def enough(d):
-    count = 0          # 目前用了幾座基地台
-    last_covered = -1  # 目前為止涵蓋範圍的右端點（一開始還沒涵蓋，設一個不可能的值）
-    for x in p:
-        if x > last_covered:        # 這個點還沒被涵蓋，必須新蓋一座基地台
-            count += 1
-            last_covered = x + d    # 新基地台從 x 開始，涵蓋到 x+d
-            if count > k:           # 用的基地台已經超過 k 座，提早失敗
-                return False
-    return count <= k
-
-# 對直徑 d 做二分搜，找出最小的可行直徑
-lo, hi = 0, p[-1] - p[0]   # 直徑的搜尋範圍：0 到 最大差距
-while lo < hi:
-    mid = (lo + hi) // 2
-    if enough(mid):
-        hi = mid        # mid 可行，答案可能可以更小
-    else:
-        lo = mid + 1     # mid 不可行，答案要更大
-
-print(lo)  # 印出最小可行直徑
-</code></pre>
-</div>
-</details>
-    </div>
-  </section>
-
-  <!-- ============ 掃描線演算法 ============ -->
-  <section class="topic" id="topic-sweep">
-    <p class="topic-intro">掃描線演算法：想像一把尺子從左滑到右，邊滑邊更新答案。</p>
-
-    <div class="card" id="sweep">
-      <h2><span class="num">1</span>掃描線演算法：想像一把尺子滑過去<span class="lvl">基礎</span></h2>
-      <p>
-        掃描線演算法的意思是：<b>想像有一條線（或一把尺）從左慢慢滑到右邊</b>，滑的過程中，我們一邊記錄目前看到了什麼，一邊更新答案。
-      </p>
-
-      <h3>📏 線段的總長度：重疊的地方不要算兩次</h3>
-      <p>
-        如果地上畫了好幾條線段，有些會互相重疊，要算出「總共蓋住了多長」，重疊的部分只能算一次。
-      </p>
-      <div class="example">
-        <span class="label">做法</span>
-        把所有線段的<b>開始點和結束點</b>都放在一起，由左到右排序。想像尺子從左滑到右，碰到「開始點」就代表這裡開始被蓋住，碰到「結束點」就代表結束。這樣可以一次算出所有被蓋住的長度，不會重複算。
-      </div>
-
-      <h3>📈 買賣賺最多：只要記住「目前最低價」</h3>
-      <p>
-        每天股票（或商品）價格都不一樣，先買後賣一次，怎麼賺最多？
-      </p>
-      <div class="example">
-        <span class="label">做法：邊看邊記住「目前為止的最低價」</span>
-        從第一天開始，每天想：「如果我今天賣掉，最多能賺多少？」也就是「今天的價格」減去「到今天為止看過的最低價格」。把每天算出來的獲利中最大的記下來，就是答案！這樣只要看一次所有的天數，就能算出來，不需要每兩天都去比較。
-      </div>
-
-      <div class="tip">
-        💡 這其實跟「線段聯集」的想法很像：都是<b>從左到右掃過去，一邊掃一邊更新一個簡單的紀錄（例如目前最低價、目前蓋住的長度）</b>，就能又快又準地算出答案，不需要把所有組合都比一遍。
-      </div>
-    </div>
-
-    <div class="card" id="sweep-practice">
-      <h2><span class="num">🏆</span>練習題與題解<span class="lvl">由淺入深</span></h2>
-
-      <div class="zj">
-        <span class="label">① 暖身：每群選一個數字湊最大總和</span>
-        <a href="https://zerojudge.tw/ShowProblem?problemid=c295" target="_blank">c295. APCS-2016-1029-2最大和</a>（注意：此題實際內容不是股票獲利，而是「N 群數字，每群選一個湊出最大總和，並判斷選出的數字能否整除總和」，適合拿來練習掃描前的資料處理手感，當作暖身）。
-      </div>
-
-      <div class="zj">
-        <span class="label">② 進階：線段聯集總長度（APCS 原題）</span>
-        <a href="https://zerojudge.tw/ShowProblem?problemid=b966" target="_blank">b966. 3. 線段覆蓋長度</a> —— 就是本節「線段聯集」的原題，是掃描線演算法最經典的入門應用。
-      </div>
-
-      <h3>c295 最大和：完整題解</h3>
-      <p>
-        題目：給定 N 群數字，每群 M 個，各群選一個數字加總得到 S，求 S 的最大值，並輸出所選數字中能整除 S 的（依群別順序），若都不能整除則輸出 -1。
-      </p>
-      <details class="solution">
-<summary>📋 點我展開／收合完整題解程式碼</summary>
-<div class="code-wrap">
-<button class="copy-btn" onclick="copyCode(this)">📋 複製程式碼</button>
-<pre><code class="language-python"># c295 最大和：貪心（每群挑最大值，總和自然最大）
-n, m = map(int, input().split())
-picks = []
-for _ in range(n):
-    row = list(map(int, input().split()))
-    picks.append(max(row))   # 每群只要選最大的那個，總和一定最大
-
-S = sum(picks)
-# 找出「選出的數字」中，能整除總和 S 的那些，依群別順序輸出
-divisors = [str(x) for x in picks if S % x == 0]
-
-print(S)
-print(' '.join(divisors) if divisors else -1)
-</code></pre>
-</div>
-</details>
-
-      <h3>b966 線段覆蓋長度：完整題解</h3>
-      <p>
-        題目：輸入 N 個線段，計算這些線段總共覆蓋的長度，重疊的部分只能算一次。
-      </p>
-      <details class="solution">
-<summary>📋 點我展開／收合完整題解程式碼</summary>
-<div class="code-wrap">
-<button class="copy-btn" onclick="copyCode(this)">📋 複製程式碼</button>
-<pre><code class="language-python"># b966 線段覆蓋長度：掃描線（差分 / 事件排序）
-n = int(input())
-events = []  # 每個線段拆成「開始事件」與「結束事件」
-for _ in range(n):
-    l, r = map(int, input().split())
-    events.append((l, 1))    # 在 l 這裡厚度 +1
-    events.append((r, -1))   # 在 r 這裡厚度 -1
-
-# 排序規則：座標小的在前；座標相同時，「開始事件」要排在「結束事件」前面，
-# 這樣才不會把同一座標的覆蓋長度算漏
-events.sort(key=lambda e: (e[0], -e[1]))
-
-total = 0       # 目前累積的總覆蓋長度
-thickness = 0   # 目前這個位置被幾條線段蓋住
-last = None     # 上一個處理過的座標
-
-for pos, delta in events:
-    if thickness > 0 and last is not None:
-        # 上一段 [last, pos] 之間有被覆蓋，把長度加進總和
-        total += pos - last
-    last = pos
-    thickness += delta   # 更新目前的覆蓋厚度
-
-print(total)
-</code></pre>
-</div>
-</details>
-    </div>
-  </section>
-
-  <!-- ============ 分治演算法 ============ -->
-  <section class="topic" id="topic-divide">
-    <p class="topic-intro">分治演算法：切一半，各自解決，再合併起來。</p>
-
-    <div class="card" id="divide">
-      <h2><span class="num">1</span>分治演算法：切一半，各自解決，再合併<span class="lvl">基礎</span></h2>
-      <p>
-        分治（Divide and Conquer）的精神很簡單：<b>把一個大問題切成兩半，各自先解決小問題，最後把兩邊的答案合併成完整答案</b>。
-      </p>
-      <div class="stepbox">
-        <div class="step">① 切割<br>把問題分兩半</div>
-        <div class="arrow">→</div>
-        <div class="step">② 各自求解<br>（遞迴處理）</div>
-        <div class="arrow">→</div>
-        <div class="step">③ 合併<br>組合成完整答案</div>
-      </div>
-      <div class="example">
-        <span class="label">🍕 生活例子：兩個人一起數一大疊考卷</span>
-        一疊考卷太多了，一個人數要很久。如果分成兩疊，你數一疊、朋友數一疊，最後把兩個數字加起來，就是總數。這就是分治：<b>切一半、各自做、加起來</b>。
-      </div>
-
-      <h3>📊 合併排序法：邊分邊排序</h3>
-      <p>
-        排序一堆數字時，可以先把數字分成兩半，各自排好序，最後再把兩個已經排好的序列合併成一個。合併兩個已經排好序的隊伍其實很簡單：只要每次比較兩隊最前面的人，把比較小的那個先放進新隊伍，一直比到其中一隊清空為止。
-      </p>
-
-      <h3>🔍 分治最重要的是「合併」這一步</h3>
-      <p>
-        使用分治法時，切割跟各自求解通常都很簡單（就是呼叫自己去處理一半的資料），<b>真正需要動腦筋的地方是「怎麼把兩邊的答案合併起來」</b>。想清楚合併的方法，整個問題往往就解決了。
-      </p>
-      <div class="example">
-        <span class="label">🧮 例子：計算逆序對（數列中「前面比後面大」的配對數）</span>
-        給一排數字，找出所有「前面的數字比後面的數字大」的配對，例如 (3, 1, 9, 8, 9, 2) 裡有 6 組這樣的配對。
-        <br><br>
-        直接兩兩比對要花很多時間，但如果用分治：先算左邊自己內部的配對數、算右邊自己內部的配對數，最後只要算「左邊某個數字比右邊某個數字大」的配對數量，而這剛好可以搭配「合併排序法」的合併步驟一起完成，一次處理，非常有效率。
-      </div>
-      <div class="zj">
-        <span class="label">🏆 動手練習（zerojudge）</span>
-        <a href="https://zerojudge.tw/ShowProblem?problemid=q655" target="_blank">q655. 上菜 (Serving)</a> —— 這一題的核心就是計算逆序對數量，很適合拿來練習分治法的合併技巧。
-      </div>
-
-      <div class="tip">
-        💡 分治和掃描線常常可以解決同一種問題（例如「線段最近點對」），差別在於：分治通常只需要簡單的陣列就能做到，而掃描線有時需要比較複雜的資料結構。所以遇到問題時，不妨兩種都想想看！
-      </div>
-    </div>
-
-    <div class="card" id="divide-practice">
-      <h2><span class="num">🏆</span>練習題與題解<span class="lvl">由淺入深</span></h2>
-
-      <div class="zj">
-        <span class="label">① 基礎：合併排序的合併技巧（自我練習）</span>
-        先試著自己動手寫一次合併排序法（merge sort），確定自己能正確合併兩個已排序好的陣列，這是所有分治合併題目的基本功。
-      </div>
-
-      <div class="zj">
-        <span class="label">② 進階：逆序對（APCS 相關概念，分治法原題）</span>
-        <a href="https://zerojudge.tw/ShowProblem?problemid=q655" target="_blank">q655. 上菜 (Serving)</a> —— 標籤明確標示「分治法／逆序數對」，是本節「合併排序法找逆序對」概念的實戰題。
-      </div>
-
-      <h3>q655 上菜：完整題解</h3>
-      <p>
-        題目：N 分鐘內，每分鐘廚師做出一道料理（種類 C_i），同時也有一位客人點餐（種類 D_i）。上菜規則是「依照料理做出的先後順序」，同種類料理則「先點的客人先上菜」。當某位客人被排在他後面點餐的人搶先上菜時，怒氣值 +1，請計算所有客人的怒氣值總和。
-      </p>
-      <p>
-        關鍵想法：把每一次「上菜順序」對應到某一位客人，就會得到一個「客人到達順序 → 被上菜順序」的對應表。而怒氣值總和，其實就是這張對應表裡「逆序對」的數量——這正是分治法（合併排序法）的經典應用！
-      </p>
-      <details class="solution">
-<summary>📋 點我展開／收合完整題解程式碼</summary>
-<div class="code-wrap">
-<button class="copy-btn" onclick="copyCode(this)">📋 複製程式碼</button>
-<pre><code class="language-python"># q655 上菜 (Serving)：分治法（合併排序法計算逆序對）
-import sys
-from collections import deque
-
-def merge_count(a, le, ri):
-    # 計算 a[le:ri] 區間內的逆序對數量，同時把這段區間排序好
-    if le + 1 >= ri:
-        return 0
-    mid = (le + ri) // 2
-    w = merge_count(a, le, mid) + merge_count(a, mid, ri)
-    temp = []
-    i, j = le, mid
-    while i < mid and j < ri:
-        if a[i] <= a[j]:
-            temp.append(a[i]); i += 1
-        else:
-            temp.append(a[j]); j += 1
-            w += mid - i   # 左邊剩下的元素都比 a[j] 大，形成逆序對
-    temp.extend(a[i:mid])
-    temp.extend(a[j:ri])
-    a[le:ri] = temp
-    return w
-
-def solve():
-    data = sys.stdin.read().split()
-    idx = 0
-    n = int(data[idx]); idx += 1
-    C = [0] * (n + 1)   # 第 m 分鐘做出的料理種類
-    D = [0] * (n + 1)   # 第 i 分鐘點餐的料理種類
-    for m in range(1, n + 1):
-        C[m] = int(data[idx]); D[m] = int(data[idx + 1]); idx += 2
-
-    # 依料理種類，分別把「製作順序」與「點餐順序」排隊
-    prod_queue = {}
-    arr_queue = {}
-    for m in range(1, n + 1):
-        prod_queue.setdefault(C[m], deque()).append(m)
-    for i in range(1, n + 1):
-        arr_queue.setdefault(D[i], deque()).append(i)
-
-    # 同種類料理採 FIFO 配對：第 k 個做出的料理，配給第 k 個點這道菜的客人
-    pos = [0] * (n + 1)   # pos[客人到達順序] = 被分配到的製作順序（= 上菜順序）
-    for t, aq in arr_queue.items():
-        pq = prod_queue[t]
-        while aq:
-            cust = aq.popleft()
-            pos[cust] = pq.popleft()
-
-    # 怒氣值總和 = 「到達順序」與「上菜順序」之間的逆序對數量
-    arr = pos[1:]
-    print(merge_count(arr, 0, len(arr)))
-
-solve()
-</code></pre>
-</div>
-</details>
-    </div>
-  </section>
-
-  <!-- ============ 動態規劃 ============ -->
-  <section class="topic" id="topic-dp">
-    <p class="topic-intro">動態規劃是公認最難的一關，這裡準備了 8 個由淺入深的重點，一步步建立感覺。</p>
-    <div class="progress">
-      <span>① 為什麼難</span><span>② 三步驟</span><span>③ 一維</span><span>④ 二維</span>
-      <span>⑤ 背包</span><span>⑥ 進階</span><span>⑦ 挑戰題</span><span>⑧ 學習建議</span>
-    </div>
-
-    <div class="card" id="dp-intro">
-      <h2><span class="num">1</span>動態規劃是什麼？為什麼最難？<span class="lvl">入門</span></h2>
-      <p>
-        動態規劃（Dynamic Programming，簡稱 DP）常常被認為是最難學的演算法主題，原因不是它用到艱深的數學，而是<b>每一題的「思考方式」都不太一樣，很難套公式</b>，需要多做題目累積經驗才能抓到感覺。
-      </p>
-      <div class="warn">
-        <span class="label">⚠️ 為什麼「純遞迴」會太慢？</span>
-        舉例：計算「爬樓梯，每次走1階或2階，總共有幾種走法」。如果直接寫遞迴 <code>f(n) = f(n-1) + f(n-2)</code>，程式看起來很簡潔，但是當 n 只是 40，程式就會卡很久；n=100 更是「跑到天荒地老都跑不完」。
-        <br><br>
-        原因是：<b>同樣的答案被重複計算了非常多次</b>。例如算 f(40) 時，f(38) 這個答案會被重複算了好幾萬次！
-      </div>
-      <p>
-        動態規劃要解決的正是這個問題：<b>把算過的答案「記下來」，之後需要用到時直接查表，不要重算</b>。這個概念其實很像我們寫功課時的「小抄」或「查表機」——算過的東西寫在紙上，下次要用就直接看，不用重新算一遍。
-      </p>
-      <div class="example">
-        <span class="label">📒 生活例子：查電話簿而不是每次都問一遍</span>
-        如果每次要打電話給同學都要重新問全班同學「誰知道他的電話」，太浪費時間了。不如把問到的電話號碼記在電話簿裡，下次要用直接翻開查，這就是動態規劃「記錄答案」的精神。
-      </div>
-    </div>
-
-    <div class="card" id="dp-steps">
-      <h2><span class="num">2</span>動態規劃的三個步驟<span class="lvl">入門</span></h2>
-      <p>設計一個動態規劃解法，通常照著這三個步驟思考：</p>
-      <div class="stepbox">
-        <div class="step">① 定義子問題<br>「這題可以拆成哪些比較小的同類型問題？」</div>
-        <div class="arrow">→</div>
-        <div class="step">② 找出遞迴關係<br>「這個問題的答案，怎麼用小問題的答案算出來？」</div>
-        <div class="arrow">→</div>
-        <div class="step">③ 決定計算順序<br>「照什麼順序算，才能保證用到的答案都已經算好了？」</div>
-      </div>
-      <p>
-        前兩步驟其實跟「純遞迴」的想法一樣，真正讓動態規劃變快的關鍵是<b>第三步：把答案存進一個表格，依照順序（通常是由小到大）一步步計算，不再重複呼叫自己</b>。
-      </p>
-      <div class="tip">
-        💡 也有一種偷懶的寫法叫「Top-down（由上而下）」：還是用遞迴寫，但是每次遞迴前先「偷看」表格裡有沒有算過，算過就直接拿現成答案，沒算過才真的去算，算完記得存回表格。這個方法很好寫，但要小心遞迴太深可能會出問題。
-      </div>
-    </div>
-
-    <div class="card" id="dp-1d">
-      <h2><span class="num">3</span>一維問題：爬樓梯<span class="lvl">基礎</span></h2>
-      <p>
-        最簡單的一類動態規劃問題，只需要一個一維表格就能解決。
-      </p>
-      <div class="example">
-        <span class="label">🪜 爬樓梯問題</span>
-        每一階樓梯都寫著一個「扣分」數字，每次可以走1階或2階，請問走到最後一階，最少總共要扣多少分？
-        <br><br>
-        定義 <code>c[i]</code> 為「走到第 i 階的最小扣分」。因為走到第 i 階的最後一步一定是從第 i-1 階或第 i-2 階走過來的，所以：
-        <br>
-        <code>c[i] = 第i階的扣分 + min(c[i-1], c[i-2])</code>
-        <br><br>
-        只要照 i 從小到大的順序，把每一階的答案存進表格裡，最後直接讀出最後一階的答案就好了，完全不需要遞迴！
-      </div>
-      <div class="zj">
-        <span class="label">🏆 動手練習（zerojudge）</span>
-        <a href="https://zerojudge.tw/ShowProblem?problemid=a519" target="_blank">a519. 12459 - Bees' ancestors</a> —— 這一題是類似費氏數列的一維動態規劃入門題，很適合拿來練習「表格由小到大算」的感覺。
-      </div>
-    </div>
-
-    <div class="card" id="dp-2d">
-      <h2><span class="num">4</span>二維問題：方格路徑、最長共同子字串<span class="lvl">基礎</span></h2>
-      <p>
-        有些問題的子問題需要用「兩個數字」來描述（例如格子的座標，或兩個字串各取多長），這時候就需要一個二維表格。
-      </p>
-      <h3>🗺️ 方格路徑</h3>
-      <p>
-        在一個方格棋盤上，每格都有一個分數，從左上角走到右下角（每步只能往右或往下），要找出經過分數總和最大的路線。因為每個格子只能從「左邊」或「上面」走過來，所以：
-      </p>
-      <div class="grid5">
-        <div>?</div><div>?</div><div>?</div><div>?</div>
-        <div>?</div><div>←上</div><div>目標</div><div>?</div>
-        <div>?</div><div>?</div><div>左↑</div><div>?</div>
-      </div>
-      <p style="text-align:center;">
-        <code>f[i][j] = max(f[i-1][j], f[i][j-1]) + 這一格的分數</code>
-      </p>
-      <p>只要由上而下、由左而右依序把每個格子填好，最後右下角的格子就是答案。</p>
-
-      <h3>🔤 最長共同子字串（LCS）</h3>
-      <p>
-        給兩個字串，找出「最長的共同子序列」（字母順序要一樣，但可以跳過某些字母）。例如 "algorithm" 與 "alignment" 的最長共同子序列長度是 4（例如 algm）。
-      </p>
-      <div class="example">
-        <span class="label">做法</span>
-        比較兩字串的最後一個字母：如果一樣，答案就是「兩邊都去掉最後一個字母的答案」再加1；如果不一樣，答案就是「去掉其中一邊最後一個字母」兩種情況中比較大的那個。用一個二維表格，由左上往右下逐格算，就能算出答案。
-      </div>
-      <div class="zj">
-        <span class="label">🏆 動手練習（zerojudge）</span>
-        <a href="https://zerojudge.tw/ShowProblem?problemid=a252" target="_blank">a252. Another LCS</a> —— 直接練習最長共同子字串的經典二維動態規劃題目。
-      </div>
-      <div class="tip">
-        💡 順帶一提：像「找一段連續數字的最大總和」這種問題，用分治也能解（把陣列切一半，分別找左邊、右邊、跨過中間的最大和，取最大值），思路可以參考本頁「分治演算法」分頁中的合併技巧。
-      </div>
-    </div>
-
-    <div class="card" id="dp-knapsack">
-      <h2><span class="num">5</span>背包問題<span class="lvl">進階</span></h2>
-      <p>
-        背包問題是動態規劃最經典的題目之一，幾乎每個學動態規劃的人都會碰到它。
-      </p>
-      <div class="example">
-        <span class="label">🎒 大賣場免費大搬家</span>
-        你可以在「總重量不超過 W」的限制下，從 n 樣商品中挑選一些帶走（每樣只能選一次，不能只拿一部分），每樣商品都有自己的重量與價值，希望帶走的商品總價值越大越好。
-      </div>
-      <p>
-        如果只想「前 i 樣物品」的最佳解，會發現新增一樣物品可能讓整個答案大翻盤，很難直接列出遞迴式。這時候的訣竅是<b>多加一個條件</b>：除了「前 i 樣物品」，再加上「重量限制 j」，也就是定義：
-      </p>
-      <p style="text-align:center;"><code>d[i][j] = 考慮前 i 樣物品、重量不超過 j 時的最大價值</code></p>
-      <div class="example">
-        <span class="label">遞迴關係</span>
-        對第 i 樣物品，只有兩種選擇：<br>
-        • 不選它：<code>d[i][j] = d[i-1][j]</code><br>
-        • 選它（如果裝得下）：<code>d[i][j] = 這樣物品的價值 + d[i-1][j - 這樣物品的重量]</code><br>
-        兩者取比較大的就是答案。
-      </div>
-      <div class="zj">
-        <span class="label">🏆 動手練習（zerojudge）</span>
-        <a href="https://zerojudge.tw/ShowProblem?problemid=b184" target="_blank">b184. 5. 裝貨櫃問題</a> —— 標準的 0/1 背包問題，跟上面「大賣場免費大搬家」的做法完全一樣，很適合當作背包問題的第一題練習。
-      </div>
-    </div>
-
-    <div class="card" id="dp-lis">
-      <h2><span class="num">6</span>最長遞增子序列（進階）<span class="lvl">進階</span></h2>
-      <p>
-        這一題稍微難一點，但是非常經典，常被簡稱 LIS（Longest Increasing Subsequence）。
-      </p>
-      <div class="example">
-        <span class="label">📈 例子</span>
-        給一排數字，找出最長的一段「由左到右挑出來、而且數字越挑越大」的子序列。例如 (2, 4, 1, 3, 6, 4, 6, 9) 中可以挑出 (1, 3, 4, 6, 9)，長度是 5。
-      </div>
-      <p>
-        最直接的想法：定義 <code>lis(i)</code> 為「以第 i 個數字結尾的最長遞增序列長度」，那麼 <code>lis(i) = 前面比它小的數字中，lis值最大的那個 + 1</code>。這樣寫程式雖然正確，但是每個位置都要往前搜尋一遍，速度不夠快。
-        更聰明的做法是額外維護一個「目前每種長度，最小可能的結尾數字」的表格，這樣就可以用二分搜快速找到該接在哪裡後面，把速度從「檢查所有組合」大幅加快。
-      </p>
-      <div class="zj">
-        <span class="label">🏆 動手練習（zerojudge）</span>
-        <a href="https://zerojudge.tw/ShowProblem?problemid=d052" target="_blank">d052. 11456 - Trainsorting</a> —— 直接練習最長遞增子序列（LIS），是體會「動態規劃搭配二分搜可以加速」的好題目。
-      </div>
-    </div>
-
-    <div class="card" id="dp-hard">
-      <h2><span class="num">7</span>階梯數字（挑戰題）<span class="lvl">挑戰</span></h2>
-      <p>
-        這一題被公認是比較難想的動態規劃題目，放在這裡讓大家看看「難的動態規劃」長什麼樣子，不用擔心一次就要完全學會。
-      </p>
-      <div class="example">
-        <span class="label">🔢 階梯數字</span>
-        如果一個正整數「從左到右看，每一位數字只會不變或變大」，就稱為階梯數字，例如 123、234、777。給一個數字 N，請計算不超過 N 的階梯數字總共有多少個。
-      </div>
-      <p>
-        這一題的關鍵想法是：<b>先算出一個表格 <code>step[i][j]</code>，代表「以數字 j 開頭的 i 位階梯數字總共有幾個」</b>，再依照輸入的 N，一位一位去累加表格裡對應的數字。因為每多一位數字時，能接在後面的數字只能「不小於前一位」，所以表格可以用一個簡單的規律，由位數少往位數多、由大數字往小數字，逐步計算出來。
-      </p>
-      <p>
-        這一題告訴我們：<b>不是所有動態規劃的子問題都直接對應題目給的資料</b>，有時候需要先設計一個「輔助表格」，把數字拆解成位數來思考，才找得到規律。這也是動態規劃困難的地方——找到正確的子問題定義，往往比寫程式本身還要花時間。
-      </p>
-      <div class="zj">
-        <span class="label">🏆 動手練習（zerojudge）</span>
-        <a href="https://zerojudge.tw/ShowProblem?problemid=c543" target="_blank">c543. 四、階梯數字(ladder) (APCS 加強題)</a> —— 就是這一題的原題，非常適合挑戰看看，感受一下困難動態規劃題目的思考過程。
-      </div>
-    </div>
-
-    <div class="card" id="dp-tips">
-      <h2><span class="num">8</span>學動態規劃的建議<span class="lvl">總結</span></h2>
-      <p><span class="emoji">✏️</span>先寫出「純遞迴」版本，確定遞迴關係式是對的，再想辦法改成表格或加上小抄（memo），不要一開始就想直接寫出最有效率的版本。</p>
-      <p><span class="emoji">🧩</span>如果「定義子問題」時發現遞迴式列不出來，通常代表子問題的定義「條件不夠多」，可以試著多加一個條件（就像背包問題多加了「重量限制」這個條件）。</p>
-      <p><span class="emoji">📚</span>多做幾題經典題型（爬樓梯、方格路徑、LCS、背包、LIS），把它們的思考方式記起來，很多新題目其實是這些經典題的變化版。</p>
-      <p><span class="emoji">🐢</span>不用急著求快，先求對。能正確跑出答案的暴力解，也是找到規律、設計動態規劃的重要線索。</p>
-    </div>
-
-    <div class="card" id="dp-practice">
-      <h2><span class="num">🏆</span>練習題與題解<span class="lvl">由淺入深</span></h2>
-
-      <div class="zj">
-        <span class="label">① 入門：一維DP（費氏數列變形）</span>
-        <a href="https://zerojudge.tw/ShowProblem?problemid=a519" target="_blank">a519. 12459 - Bees' ancestors</a>
-      </div>
-      <div class="zj">
-        <span class="label">② 基礎：二維DP（最長共同子字串 LCS）</span>
-        <a href="https://zerojudge.tw/ShowProblem?problemid=a252" target="_blank">a252. Another LCS</a>
-      </div>
-      <div class="zj">
-        <span class="label">③ 進階：0/1 背包問題</span>
-        <a href="https://zerojudge.tw/ShowProblem?problemid=b184" target="_blank">b184. 5. 裝貨櫃問題</a>
-      </div>
-      <div class="zj">
-        <span class="label">④ 進階：最長遞增子序列 LIS（搭配二分搜優化）</span>
-        <a href="https://zerojudge.tw/ShowProblem?problemid=d052" target="_blank">d052. 11456 - Trainsorting</a>
-      </div>
-      <div class="zj">
-        <span class="label">⑤ 挑戰：數位 DP（階梯數字）</span>
-        <a href="https://zerojudge.tw/ShowProblem?problemid=c543" target="_blank">c543. 四、階梯數字(ladder) (APCS 加強題)</a>
-      </div>
-
-      <h3>① a519 蜜蜂祖先數：一維DP</h3>
-      <p>輸入多行世代數 n（以 0 結束），輸出第 n 代的祖先數量。第 n 代祖先數 = 第 n-1 代 + 第 n-2 代（跟費氏數列一樣的遞迴關係）。</p>
-      <details class="solution">
-<summary>📋 點我展開／收合完整題解程式碼</summary>
-<div class="code-wrap">
-<button class="copy-btn" onclick="copyCode(this)">📋 複製程式碼</button>
-<pre><code class="language-python"># a519 蜜蜂祖先數：一維DP（費氏數列變形）
-import sys
-
-MAXN = 80
-# 先把 1~80 代的祖先數全部算好，存進表格 anc[]
-anc = [0] * (MAXN + 1)
-anc[1] = 1
-anc[2] = 2
-for i in range(3, MAXN + 1):
-    anc[i] = anc[i-1] + anc[i-2]  # 遞迴關係：跟前兩代的祖先數相加
-
-for line in sys.stdin:
-    line = line.strip()
-    if line == '':
-        continue
-    n = int(line)
-    if n == 0:      # 輸入 0 代表結束
-        break
-    print(anc[n])
-</code></pre>
-</div>
-</details>
-
-      <h3>② a252 三字串最長共同子序列：二維DP的延伸（三維）</h3>
-      <p>輸入三個字串，求三者共同的最長子序列長度。做法是把課文中兩字串的 LCS 遞迴式，多加一個維度變成三個字串版本。</p>
-      <details class="solution">
-<summary>📋 點我展開／收合完整題解程式碼</summary>
-<div class="code-wrap">
-<button class="copy-btn" onclick="copyCode(this)">📋 複製程式碼</button>
-<pre><code class="language-python"># a252 三字串的最長共同子序列（LCS）：三維DP
-s1 = input().strip()
-s2 = input().strip()
-s3 = input().strip()
-l1, l2, l3 = len(s1), len(s2), len(s3)
-
-# dp[i][j][k]：s1前i個字、s2前j個字、s3前k個字的LCS長度
-dp = [[[0] * (l3 + 1) for _ in range(l2 + 1)] for _ in range(l1 + 1)]
-
-for i in range(1, l1 + 1):
-    for j in range(1, l2 + 1):
-        for k in range(1, l3 + 1):
-            if s1[i-1] == s2[j-1] == s3[k-1]:
-                # 三個字元都相同，可以接在一起，LCS長度加1
-                dp[i][j][k] = dp[i-1][j-1][k-1] + 1
+<!-- 第 6 關 -->
+<section class="stage" id="s6" data-title="第 6 關　雙序列">
+  <h2>第 6 關　雙序列：LCS 與編輯距離</h2>
+  <p class="idea">兩個前綴長度當座標，比較最後一個字。可以改字串自己試。</p>
+  <div class="demo" id="demo-seq"></div>
+  <dl class="fm">
+    <div><dt>LCS 相同</dt><dd><code>dp[i-1][j-1] + 1</code></dd></div>
+    <div><dt>LCS 不同</dt><dd><code>max(dp[i-1][j], dp[i][j-1])</code></dd></div>
+    <div><dt>編輯距離 不同</dt><dd><code>min(上, 左, 左上) + 1</code></dd></div>
+    <div><dt>編輯距離 初始</dt><dd><code>dp[i][0] = i，dp[0][j] = j</code></dd></div>
+  </dl>
+  <details class="code"><summary>Python 模板（LCS）</summary><div><pre><code>s = input()                                 # 讀入第一個字串
+t = input()                                 # 讀入第二個字串
+n = len(s)                                  # s 的長度
+m = len(t)                                  # t 的長度
+dp = [[0] * (m + 1) for _ in range(n + 1)]  # 多開一列一行代表「空字串」，初始值剛好都是 0
+for i in range(1, n + 1):                   # s 取前 i 個字
+    for j in range(1, m + 1):               # t 取前 j 個字
+        if s[i - 1] == t[j - 1]:            # 最後一個字相同（字串索引要減 1）
+            dp[i][j] = dp[i - 1][j - 1] + 1
+        else:                               # 不同：取「去掉 s 最後字」或「去掉 t 最後字」的較大者
+            if dp[i - 1][j] &gt; dp[i][j - 1]:
+                dp[i][j] = dp[i - 1][j]
             else:
-                # 至少捨棄其中一個字串的最後一個字元，取最大值
-                dp[i][j][k] = max(dp[i-1][j][k], dp[i][j-1][k], dp[i][j][k-1])
+                dp[i][j] = dp[i][j - 1]
+print(dp[n][m])                             # 答案在右下角</code></pre></div></details>
+  <details class="traps"><summary>常見的坑</summary><div><ul>
+    <li>dp 的 i 是「前 i 個字」，字串索引是 s[i-1]</li><li>LCS 是子序列，不是連續的子字串</li></ul></div></details>
+  <div class="practice"><h3>練習題</h3><ul class="plist" data-stage="6"></ul></div>
+</section>
 
-print(dp[l1][l2][l3])
-</code></pre>
-</div>
-</details>
+<!-- 第 7 關 -->
+<section class="stage" id="s7" data-title="第 7 關　APCS 辨識題型">
+  <h2>第 7 關　APCS：辨識題型</h2>
+  <p class="idea">先認出它是哪一型，再加一點變化。點卡片翻面。</p>
+  <div class="cards">
+    <button class="flip" type="button" aria-pressed="false"><span class="in"><span class="face front">一排數字，找最好的一段連續區間</span><span class="face back">第 3 關 Kadane。若有「最多跳過 K 個」，再加一維。</span></span></button>
+    <button class="flip" type="button" aria-pressed="false"><span class="in"><span class="face front">要挑出一組遞增的東西</span><span class="face back">第 3 關 LIS。有二維條件時，先排序再對一維做 LIS。</span></span></button>
+    <button class="flip" type="button" aria-pressed="false"><span class="in"><span class="face front">格子上走，只能往固定方向</span><span class="face back">第 5 關 網格 DP。可以往回走時，每一列掃兩次（由左、由右）。</span></span></button>
+    <button class="flip" type="button" aria-pressed="false"><span class="in"><span class="face front">有「最多 K 次／K 人」的限制</span><span class="face back">把 K 當成一維狀態，再用滾動陣列省空間。</span></span></button>
+    <button class="flip" type="button" aria-pressed="false"><span class="in"><span class="face front">N 大到 10⁵ 以上</span><span class="face back">O(N²) 的 dp 會超時，找 O(N log N) 或 O(N) 的做法。</span></span></button>
+  </div>
+  <div class="practice"><h3>練習題</h3><ul class="plist" data-stage="7"></ul></div>
+</section>
 
-      <h3>③ b184 裝貨櫃問題：0/1 背包</h3>
-      <p>輸入包含多筆測資直到檔案結尾，每筆測資有 n 項貨物與體積、利潤，貨櫃總容量固定是 100，求最大利潤總和。</p>
-      <details class="solution">
-<summary>📋 點我展開／收合完整題解程式碼</summary>
-<div class="code-wrap">
-<button class="copy-btn" onclick="copyCode(this)">📋 複製程式碼</button>
-<pre><code class="language-python"># b184 裝貨櫃問題：0/1背包（一維滾動陣列版本）
-import sys
+<!-- 第 8 關 -->
+<section class="stage" id="s8" data-title="第 8 關　區間 DP">
+  <h2>第 8 關　區間 DP</h2>
+  <p class="idea">狀態是一段區間，轉移是在中間切一刀。例：矩陣連乘，求最少乘法次數。</p>
+  <div class="demo" id="demo-chain"></div>
+  <dl class="fm">
+    <div><dt>狀態</dt><dd><code>dp[i][j]</code> 第 i 到 j 個矩陣的最少次數</dd></div>
+    <div><dt>轉移</dt><dd><code>min( dp[i][k] + dp[k+1][j] + 合併花費 )</code></dd></div>
+    <div><dt>順序</dt><dd>區間長度由短到長</dd></div>
+  </dl>
+  <details class="code"><summary>Python 模板</summary><div><pre><code># dims 長度 n+1：第 i 個矩陣的大小是 dims[i] x dims[i+1]
+n = len(dims) - 1                         # 矩陣個數
+BIG = 10 ** 18                            # 很大的數字
+dp = [[0] * n for _ in range(n)]          # dp[i][j] = 乘起第 i 到 j 個矩陣的最少乘法次數，i==j 時為 0
+for L in range(1, n):                     # 區間長度由小到大（很重要！）
+    for i in range(0, n - L):             # 區間左端點
+        j = i + L                         # 區間右端點
+        dp[i][j] = BIG                    # 先設成很大，再找最小
+        for k in range(i, j):             # 在 k 與 k+1 之間切一刀
+            cost = dp[i][k] + dp[k + 1][j] + dims[i] * dims[k + 1] * dims[j + 1]
+            if cost &lt; dp[i][j]:           # 這個切法更便宜
+                dp[i][j] = cost
+print(dp[0][n - 1])                       # 整段區間的答案</code></pre></div></details>
+  <details class="traps"><summary>常見的坑</summary><div><ul>
+    <li>一定要先枚舉區間長度，否則會用到還沒算的格子</li><li>合併花費要看題目，不一定和矩陣相同</li></ul></div></details>
+  <div class="practice"><h3>練習題</h3><ul class="plist" data-stage="8"></ul></div>
+</section>
 
-def solve():
-    data = sys.stdin.read().split()
-    idx = 0
-    results = []
-    while idx < len(data):
-        n = int(data[idx]); idx += 1
-        w = [0] * n  # 每項貨物的體積
-        p = [0] * n  # 每項貨物的利潤
-        for i in range(n):
-            w[i] = int(data[idx])
-            p[i] = int(data[idx + 1])
-            idx += 2
-        W = 100  # 貨櫃總容量固定是100
-        # dp[j]：容量剛好可用 j 時，可以獲得的最大利潤
-        dp = [0] * (W + 1)
-        for i in range(n):
-            # j 要由大到小更新，確保每項貨物最多只被選一次（0/1背包的關鍵）
-            for j in range(W, w[i] - 1, -1):
-                dp[j] = max(dp[j], dp[j - w[i]] + p[i])
-        results.append(str(dp[W]))
-    print('\n'.join(results))
-
-solve()
-</code></pre>
-</div>
-</details>
-
-      <h3>④ d052 火車調度：最長遞增子序列（LIS）</h3>
-      <p>輸入多筆測資，每筆有 n 節車廂與重量，求最長「重量遞增」的子序列長度。用二分搜將複雜度優化到 O(n log n)。</p>
-      <details class="solution">
-<summary>📋 點我展開／收合完整題解程式碼</summary>
-<div class="code-wrap">
-<button class="copy-btn" onclick="copyCode(this)">📋 複製程式碼</button>
-<pre><code class="language-python"># d052 火車調度：最長遞增子序列（LIS），二分搜優化版
-import bisect
-import sys
-
-def solve():
-    data = sys.stdin.read().split()
-    idx = 0
-    T = int(data[idx]); idx += 1
-    out = []
-    for _ in range(T):
-        n = int(data[idx]); idx += 1
-        w = [int(data[idx + i]) for i in range(n)]
-        idx += n
-        # tails[k]：長度為 k+1 的遞增子序列中，最小可能的結尾值
-        tails = []
-        for v in w:
-            pos = bisect.bisect_left(tails, v)  # 找出可以接在哪裡
-            if pos == len(tails):
-                tails.append(v)   # 可以接得比原本都長，長度+1
-            else:
-                tails[pos] = v    # 用更小的結尾值替換，讓未來更容易接更長
-        out.append(str(len(tails)))
-    print('\n'.join(out))
-
-solve()
-</code></pre>
-</div>
-</details>
-
-      <h3>⑤ c543 階梯數字：數位DP（挑戰題）</h3>
-      <p>輸入多行正整數 N（可能非常大，最多約 30 幾位數），對每一行輸出不超過 N 的階梯數字個數，答案要模 1e9+7。</p>
-      <details class="solution">
-<summary>📋 點我展開／收合完整題解程式碼</summary>
-<div class="code-wrap">
-<button class="copy-btn" onclick="copyCode(this)">📋 複製程式碼</button>
-<pre><code class="language-python"># c543 階梯數字：數位DP (Digit DP)
-import sys
-
-MOD = 10**9 + 7
-
-def count_stepping(nstr):
-    n = [int(ch) for ch in nstr]   # 把N的每一位數字拆開存成陣列
-    L = len(n)
-    # step[i][j]：i 位數、最高位（開頭）是 j 的階梯數字個數
-    step = [[1] * 10 for _ in range(L + 1)]
-    step[1][0] = 0  # 0不是階梯數字，其餘1~9的一位數各算1個（已經是預設值1）
-
-    # 遞迴關係：step[i][j] = step[i][j+1] + step[i-1][j]（尾端往前的後綴和）
-    for i in range(2, L + 1):
-        for j in range(8, -1, -1):
-            step[i][j] = (step[i][j + 1] + step[i - 1][j]) % MOD
-
-    # 神奇的地方：step[i][0] 這一格，剛好等於「所有位數比 i 少」的階梯數字總數
-    # （因為遞迴式會一路累加回去），所以不需要另外再加一次，否則會重複計算！
-    total = sum(step[L][:n[0]]) % MOD  # 開頭比N第一位小的部分（含比N位數少的所有情況）
-    is_stepping = True   # N本身是不是階梯數字
-    for i in range(1, L):
-        if n[i] < n[i - 1]:
-            is_stepping = False
-            break
-        # 前面位數已經跟N一樣，這一位選「比N這一位小」的所有可能
-        total = (total + sum(step[L - i][n[i - 1]:n[i]])) % MOD
-    if is_stepping:
-        total = (total + 1) % MOD   # N自己也是階梯數字，別忘了加1
-
-    print(total % MOD)
-
-for line in sys.stdin:
-    line = line.strip()
-    if line:
-        count_stepping(line)
-</code></pre>
-</div>
-</details>
-    </div>
-  </section>
-
-  <!-- ============ 總複習 ============ -->
-  <section class="topic" id="topic-review">
-    <p class="topic-intro">四個主題的重點濃縮版，快速複習用。</p>
-
-    <div class="card" id="summary">
-      <h2><span class="num">📝</span>重點總整理</h2>
-
-      <h3 class="review-topic">🎯 貪心演算法</h3>
-      <p><span class="emoji">🎯</span><b>核心概念</b>：每一步都選「現在看起來最好」的答案，簡單直覺，但不是每個問題都適用，用之前最好想一想或證明看看。</p>
-      <p><span class="emoji">🏥</span><b>優先佇列</b>：像急診室一樣，讓「最重要 / 最小 / 最大」的東西永遠排在最前面，方便隨時取用。</p>
-      <p><span class="emoji">📊</span><b>排序是貪心的好朋友</b>：很多貪心題目第一步都是先排序（例如照時間短到長、照結束時間早到晚）。</p>
-      <p><span class="emoji">🔍</span><b>貪心 + 二分搜</b>：遇到「最小的○○是多少」這種問題，可以先猜答案，再用貪心的方法檢查猜得對不對，越猜越準。</p>
-
-      <h3 class="review-topic">📏 掃描線演算法</h3>
-      <p><span class="emoji">📏</span>想像一條線從左滑到右，邊滑邊更新答案，常常搭配排序使用，能很有效率地解決「線段」「區間」「連續一段」的問題。</p>
-
-      <h3 class="review-topic">✂️ 分治演算法</h3>
-      <p><span class="emoji">✂️</span>把問題切一半、各自遞迴求解、再合併答案。重點通常在「合併」這一步要怎麼做才快，常跟合併排序法、逆序對等問題有關。</p>
-
-      <h3 class="review-topic">🧩 動態規劃</h3>
-      <p><span class="emoji">🧩</span>先把大問題拆成小問題（子問題），找出「答案怎麼用小問題答案算出來」的遞迴關係，再決定計算順序（由小到大）把答案存進表格，避免暴力遞迴的重複計算。</p>
-      <p><span class="emoji">🎒</span>常見經典題型：爬樓梯（一維）、方格路徑與最長共同子字串（二維）、背包問題（多加條件）、最長遞增子序列（進階＋二分搜優化）。</p>
-      <p><span class="emoji">🐢</span>學習訣竅：先求對（純遞迴），再求快（表格化）；多做經典題累積思考模式。</p>
-    </div>
-  </section>
-
-</div>
+<!-- 第 9 關 -->
+<section class="stage" id="s9" data-title="第 9 關　進階主題">
+  <h2>第 9 關　進階</h2>
+  <p class="idea">狀態可以是集合、位數、節點、兩個位置。先玩玩看「用整數表示集合」。</p>
+  <div class="demo"><p class="cap">狀態壓縮：用一個整數表示「誰被選了」</p><div id="demo-mask"></div></div>
+  <div class="mini">
+    <div><b>數位 DP</b><span>一位一位決定，沿著 N 的每一位累加。</span></div>
+    <div><b>樹上 DP</b><span>先算子節點，再合併給父節點。</span></div>
+    <div><b>雙路徑</b><span>兩個人同步走相同步數，用步數 + 兩個位置當狀態。</span></div>
+    <div><b>單調佇列優化</b><span>取前面一段範圍的最大值，O(nk) 降到 O(n)。</span></div>
+  </div>
+  <details class="code"><summary>Python 模板（分組問題）</summary><div><pre><code># 2N 個人兩兩分組，使距離總和最小。dis[i][j] 是第 i 人與第 j 人的距離
+size = 1 &lt;&lt; n                             # 所有集合共 2^n 個
+INF = float("inf")                       # 無限大
+dp = [INF] * size                        # dp[S] = 集合 S 內的人都已分好組的最小距離和
+dp[0] = 0                                # 一個人都沒分組時，距離和是 0
+for S in range(size):                    # 由小的集合推到大的集合
+    if dp[S] &lt; INF:                      # 這個集合有被走到
+        i = 0                            # 找第一個還沒分組的人
+        while i &lt; n and (S &gt;&gt; i) &amp; 1:
+            i = i + 1
+        for j in range(i + 1, n):        # 跟後面還沒分組的人配對
+            if (S &gt;&gt; j) &amp; 1 == 0:
+                T = S | (1 &lt;&lt; i) | (1 &lt;&lt; j)    # 把 i、j 都加進集合
+                if dp[S] + dis[i][j] &lt; dp[T]:
+                    dp[T] = dp[S] + dis[i][j]
+print(dp[size - 1])                      # 所有人都分好組的答案</code></pre></div></details>
+  <details class="traps"><summary>常見的坑</summary><div><ul>
+    <li>狀態壓縮 n 約 20 以內，否則 2ⁿ 會爆</li><li>數位 DP 別重複算「位數比 N 少」的情況</li></ul></div></details>
+  <div class="practice"><h3>練習題</h3><ul class="plist" data-stage="9"></ul></div>
+</section>
 
 <footer>
-  改寫自《AP325-Python》第4章（貪心演算法與掃瞄線演算法）、第5章（分治演算法）、第6章（動態規劃），以淺顯易懂的方式重新整理，並搭配 zerojudge.tw 題目範例。
+  <p>題目整理自各家 DP 教學筆記與解題紀錄，並非 ZeroJudge 官方的 DP 標籤頁；難度順序是依解法複雜度判斷的，請以題目實際題面為準。c528 的題名未能確認，做之前請先確認題目。</p>
+  <button class="btn reset" id="reset" type="button">清除所有進度</button>
 </footer>
-
-<!-- Prism.js：為題解程式碼加上 Python 語法顏色 -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+</main>
+</div>
 
 <script>
-function switchTopic(id){
-  document.querySelectorAll('.topic').forEach(function(el){ el.classList.remove('active'); });
-  document.getElementById('topic-' + id).classList.add('active');
-  document.querySelectorAll('.tab-btn').forEach(function(btn){
-    btn.classList.toggle('active', btn.getAttribute('data-topic') === id);
+var $ = function (s, r) { return (r || document).querySelector(s); };
+var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+function h(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
+function rnd(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+var PAL = ['#2c59e8', '#e8590c', '#2f9e44', '#ae3ec9', '#0c8599', '#c92a2a', '#f08c00', '#5f3dc4'];
+var PALSOFT = ['#e6ecff', '#ffe8d9', '#e0f4e5', '#f6e5fb', '#dff4f7', '#fde3e3', '#fff0d0', '#ebe5fb'];
+
+/* ---------- 播放控制 ---------- */
+function controls(host, opt) {
+  var bar = h('div', 'ctl',
+    '<button type="button" class="btn" data-a="prev">‹ 上一步</button>' +
+    '<button type="button" class="btn main" data-a="play">▶ 播放</button>' +
+    '<button type="button" class="btn" data-a="next">下一步 ›</button>' +
+    '<button type="button" class="btn" data-a="end">跳到結尾</button>' +
+    '<button type="button" class="btn" data-a="reset">重來</button>');
+  host.appendChild(bar);
+  var k = 0, timer = null;
+  function B(a) { return bar.querySelector('[data-a="' + a + '"]'); }
+  function stop() { if (timer) { clearInterval(timer); timer = null; } B('play').textContent = '▶ 播放'; }
+  function sync() { var t = opt.total(); B('prev').disabled = k <= 0; B('next').disabled = k >= t; B('end').disabled = k >= t; B('reset').disabled = k === 0; }
+  function set(v) { var t = opt.total(); k = Math.max(0, Math.min(t, v)); opt.onChange(k); sync(); }
+  function ms() { return typeof opt.ms === 'function' ? opt.ms() : (opt.ms || 650); }
+  bar.addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-a]'); if (!b) return; var a = b.dataset.a;
+    if (a === 'prev') { stop(); set(k - 1); }
+    else if (a === 'next') { stop(); set(k + 1); }
+    else if (a === 'end') { stop(); set(opt.total()); }
+    else if (a === 'reset') { stop(); set(0); }
+    else if (a === 'play') {
+      if (timer) { stop(); return; }
+      if (k >= opt.total()) set(0);
+      B('play').textContent = '❚❚ 暫停';
+      timer = setInterval(function () { if (k >= opt.total()) { stop(); return; } set(k + 1); if (k >= opt.total()) stop(); }, ms());
+    }
   });
-  window.scrollTo({top:0, behavior:'smooth'});
+  return { set: set, get: function () { return k; }, stop: stop };
 }
 
-function copyCode(btn){
-  var wrap = btn.parentElement;
-  var codeEl = wrap.querySelector('code');
-  var text = codeEl.innerText;
-
-  function showCopied(){
-    var old = btn.textContent;
-    btn.textContent = '✅ 已複製';
-    btn.classList.add('copied');
-    setTimeout(function(){
-      btn.textContent = old;
-      btn.classList.remove('copied');
-    }, 1500);
+/* ---------- 逐步填表 ---------- */
+function stepTable(host, getCfg) {
+  host.appendChild(h('div', 'dpwrap', '<table class="dp"></table>'));
+  var msg = h('div', 'dmsg'); msg.setAttribute('aria-live', 'polite'); host.appendChild(msg);
+  var table = $('table', host), cfg = null;
+  var ctl = controls(host, { total: function () { return cfg ? cfg.steps.length : 0; }, onChange: render, ms: function () { return cfg && cfg.steps.length > 14 ? 280 : 650; } });
+  function cell(r, c) { return table.querySelector('td[data-r="' + r + '"][data-c="' + c + '"]'); }
+  function build() {
+    cfg = getCfg();
+    var t = '<thead><tr><th></th>' + cfg.colLabels.map(function (c) { return '<th>' + c + '</th>'; }).join('') + '</tr></thead><tbody>';
+    for (var r = 0; r < cfg.rowLabels.length; r++) {
+      t += '<tr><th>' + cfg.rowLabels[r] + '</th>';
+      for (var c = 0; c < cfg.colLabels.length; c++) t += '<td data-r="' + r + '" data-c="' + c + '"></td>';
+      t += '</tr>';
+    }
+    table.innerHTML = t + '</tbody>';
   }
-
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(text).then(showCopied).catch(function(){
-      fallbackCopy(codeEl, showCopied);
+  function put(td, r, c, v) { td.innerHTML = (cfg.sub ? '<span class="sub">' + cfg.sub(r, c) + '</span>' : '') + '<span class="vv">' + v + '</span>'; }
+  function render(k) {
+    $$('td', table).forEach(function (td) {
+      var r = +td.dataset.r, c = +td.dataset.c;
+      if (cfg.dead && cfg.dead(r, c)) { td.className = 'dead'; td.innerHTML = ''; return; }
+      td.className = ''; td.innerHTML = cfg.sub ? '<span class="sub">' + cfg.sub(r, c) + '</span>' : '';
     });
-  } else {
-    fallbackCopy(codeEl, showCopied);
+    cfg.init.forEach(function (x) { var td = cell(x.r, x.c); put(td, x.r, x.c, x.v); td.className = 'fill'; });
+    for (var i = 0; i < k; i++) { var s = cfg.steps[i], td = cell(s.r, s.c); put(td, s.r, s.c, s.v); td.className = 'fill'; }
+    var done = k === cfg.steps.length;
+    if (k > 0) {
+      var st = cfg.steps[k - 1];
+      st.deps.forEach(function (d) { cell(d[0], d[1]).classList.add('dep'); });
+      cell(st.r, st.c).className = 'cur';
+      msg.innerHTML = st.text + (done && cfg.outro ? '<br>' + cfg.outro : '');
+    } else {
+      msg.innerHTML = (done && cfg.outro) ? cfg.outro : cfg.intro;
+    }
+    if (done && cfg.path) cfg.path.forEach(function (p) { cell(p[0], p[1]).classList.add('path'); });
   }
+  function rebuild() { ctl.stop(); build(); ctl.set(0); }
+  rebuild();
+  return { rebuild: rebuild, ctl: ctl };
 }
 
-function fallbackCopy(codeEl, done){
-  var range = document.createRange();
-  range.selectNode(codeEl);
-  var sel = window.getSelection();
-  sel.removeAllRanges();
-  sel.addRange(range);
-  try{ document.execCommand('copy'); }catch(e){}
-  sel.removeAllRanges();
-  done();
+/* ================= 第 0 關：遞迴樹 ================= */
+(function () {
+  var host = $('#demo-fib');
+  host.innerHTML = '<div class="row"><label>算 f(n)，n = <b class="nv">5</b></label><input type="range" min="2" max="7" value="5" aria-label="n">' +
+    '<label><input type="checkbox" class="memo"> 記下答案（DP）</label></div><div class="svgwrap"></div><div class="stats"></div><div class="dmsg">把滑鼠移到（或點）任一個圓角方塊，相同的 f(k) 會一起亮起來。</div>';
+  var rng = $('input[type=range]', host), memoBox = $('.memo', host), wrap = $('.svgwrap', host), stats = $('.stats', host), msg = $('.dmsg', host), nv = $('.nv', host);
+  function build(n, memo) {
+    var seen = {}, leaf = 0, nodes = [], count = {};
+    function node(k, depth) {
+      var nd = { k: k, d: depth, ch: [], hit: false }; nodes.push(nd); count[k] = (count[k] || 0) + 1;
+      if (memo && seen[k]) { nd.hit = true; nd.x = leaf++; return nd; }
+      seen[k] = true;
+      if (k >= 2) { nd.ch = [node(k - 1, depth + 1), node(k - 2, depth + 1)]; nd.x = (nd.ch[0].x + nd.ch[1].x) / 2; }
+      else nd.x = leaf++;
+      return nd;
+    }
+    var root = node(n, 0);
+    return { root: root, nodes: nodes, count: count, leaves: leaf };
+  }
+  function draw() {
+    var n = +rng.value, memo = memoBox.checked; nv.textContent = n;
+    var t = build(n, memo), SX = 40, SY = 50, W = Math.max(t.leaves * SX + 20, 200), maxd = 0;
+    t.nodes.forEach(function (nd) { if (nd.d > maxd) maxd = nd.d; });
+    var H = (maxd + 1) * SY + 20, s = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" role="img" aria-label="遞迴呼叫樹">';
+    t.nodes.forEach(function (nd) { nd.ch.forEach(function (c) { s += '<line class="sv-line" x1="' + (nd.x * SX + 30) + '" y1="' + (nd.d * SY + 24) + '" x2="' + (c.x * SX + 30) + '" y2="' + (c.d * SY + 24) + '"/>'; }); });
+    t.nodes.forEach(function (nd) {
+      var cx = nd.x * SX + 30, cy = nd.d * SY + 24, col = PAL[nd.k % 8], soft = PALSOFT[nd.k % 8];
+      s += '<g class="node" data-k="' + nd.k + '" tabindex="0"><rect x="' + (cx - 17) + '" y="' + (cy - 12) + '" width="34" height="24" rx="8" fill="' + (nd.hit ? '#fff' : soft) + '" stroke="' + col + '" stroke-width="2"' + (nd.hit ? ' stroke-dasharray="4 3"' : '') + '/>' +
+        '<text x="' + cx + '" y="' + (cy + 4) + '" class="sv-t" style="fill:' + col + ';font-size:11px">f(' + nd.k + ')</text></g>';
+    });
+    wrap.innerHTML = s + '</svg>';
+    var total = t.nodes.length, hits = t.nodes.filter(function (x) { return x.hit; }).length;
+    stats.innerHTML = memo
+      ? '<span class="badge">呼叫 <b>' + total + '</b> 次</span><span class="badge">真正計算 <b>' + (total - hits) + '</b> 次（每個 f(k) 一次）</span><span class="badge">查表 <b>' + hits + '</b> 次（虛線）</span>'
+      : '<span class="badge">遞迴呼叫 <b>' + total + '</b> 次</span><span class="badge">其實只有 <b>' + (n + 1) + '</b> 種不同的 f(k)</span>';
+    $$('.node', wrap).forEach(function (g) {
+      function on() {
+        var k = g.dataset.k;
+        $$('.node', wrap).forEach(function (o) { o.classList.toggle('tree-dim', o.dataset.k !== k); });
+        msg.innerHTML = 'f(' + k + ') 在這棵樹裡出現了 <b>' + t.count[k] + '</b> 次。';
+      }
+      function off() { $$('.node', wrap).forEach(function (o) { o.classList.remove('tree-dim'); }); }
+      g.addEventListener('mouseenter', on); g.addEventListener('focus', on); g.addEventListener('click', on);
+      g.addEventListener('mouseleave', off); g.addEventListener('blur', off);
+    });
+  }
+  rng.addEventListener('input', draw); memoBox.addEventListener('change', draw); draw();
+})();
+
+/* ================= 第 1 關：爬樓梯 ================= */
+(function () {
+  var host = $('#demo-stairs');
+  host.innerHTML = '<div class="row"><label>階數 n = <b class="nv">8</b></label><input type="range" min="3" max="12" value="8" aria-label="階數 n"></div><div class="tbl"></div>';
+  var rng = $('input', host), nv = $('.nv', host);
+  var t = stepTable($('.tbl', host), function () {
+    var n = +rng.value, dp = [1, 1], steps = [], labels = [];
+    for (var i = 2; i <= n; i++) {
+      dp[i] = dp[i - 1] + dp[i - 2];
+      steps.push({ r: 0, c: i, v: dp[i], deps: [[0, i - 1], [0, i - 2]], text: 'dp[' + i + '] = dp[' + (i - 1) + '] + dp[' + (i - 2) + '] = ' + dp[i - 1] + ' + ' + dp[i - 2] + ' = <b>' + dp[i] + '</b>' });
+    }
+    for (var j = 0; j <= n; j++) labels.push(j);
+    return { rowLabels: ['dp'], colLabels: labels, init: [{ r: 0, c: 0, v: 1 }, { r: 0, c: 1, v: 1 }], steps: steps,
+      intro: '最後一步不是走 1 階就是走 2 階，所以每一格 = 前兩格相加。按「播放」看它長出來。', outro: '走到第 ' + n + ' 階共 <b>' + dp[n] + '</b> 種走法。' };
+  });
+  rng.addEventListener('input', function () { nv.textContent = rng.value; t.rebuild(); });
+})();
+
+/* ================= 第 2 關：不能連續兩個 1 ================= */
+(function () {
+  var host = $('#demo-bits');
+  host.innerHTML = '<div class="row"><label>長度 n = <b class="nv">3</b></label><input type="range" min="1" max="6" value="3" aria-label="長度 n"><button type="button" class="btn main play">▶ 從 n = 1 長到 6</button></div>' +
+    '<div class="bits-top"><svg viewBox="0 0 360 190" role="img" aria-label="狀態轉換圖">' +
+    '<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#2c59e8"/></marker></defs>' +
+    '<circle class="sv-circ" cx="80" cy="100" r="46"/><circle class="sv-circ" cx="280" cy="100" r="46"/>' +
+    '<text class="sv-ts" x="80" y="162">結尾是 0</text><text class="sv-ts" x="280" y="162">結尾是 1</text>' +
+    '<text class="sv-t" id="n0" x="80" y="110" style="font-size:28px">1</text><text class="sv-t" id="n1" x="280" y="110" style="font-size:28px">1</text>' +
+    '<path class="sv-arrow" d="M58 58 C 20 6, 140 6, 102 58" marker-end="url(#ah)"/><text class="sv-ts" x="80" y="20">放 0</text>' +
+    '<path class="sv-arrow" d="M124 84 Q 180 60 232 84" marker-end="url(#ah)"/><text class="sv-ts" x="180" y="64">放 1</text>' +
+    '<path class="sv-arrow" d="M236 118 Q 180 144 128 118" marker-end="url(#ah)"/><text class="sv-ts" x="180" y="150">放 0</text></svg>' +
+    '<div class="lists"><div><h4>結尾是 0</h4><div class="box l0"></div></div><div><h4>結尾是 1</h4><div class="box l1"></div></div></div></div><div class="dmsg"></div>';
+  var rng = $('input[type=range]', host), nv = $('.nv', host), play = $('.play', host), msg = $('.dmsg', host), timer = null;
+  function strs(n) { var r = [''], i; for (i = 0; i < n; i++) { var nx = []; r.forEach(function (s) { nx.push(s + '0'); if (s.slice(-1) !== '1') nx.push(s + '1'); }); r = nx; } return r; }
+  function draw() {
+    var n = +rng.value; nv.textContent = n;
+    var e0 = 1, e1 = 1, p0 = 0, p1 = 0, i;
+    for (i = 2; i <= n; i++) { p0 = e0; p1 = e1; e0 = p0 + p1; e1 = p0; }
+    $('#n0', host).textContent = e0; $('#n1', host).textContent = e1;
+    var L = strs(n), z = L.filter(function (s) { return s.slice(-1) === '0'; }), o = L.filter(function (s) { return s.slice(-1) === '1'; });
+    $('.l0', host).innerHTML = z.map(function (s) { return '<span class="bitchip z">' + s + '</span>'; }).join('');
+    $('.l1', host).innerHTML = o.map(function (s) { return '<span class="bitchip o">' + s + '</span>'; }).join('');
+    msg.innerHTML = n === 1 ? 'n = 1：「0」和「1」各 1 個。' :
+      'dp[' + n + '][0] = ' + p0 + ' + ' + p1 + ' = <b>' + e0 + '</b>（結尾放 0，前面什麼結尾都行）<br>dp[' + n + '][1] = dp[' + (n - 1) + '][0] = <b>' + e1 + '</b>（結尾放 1，前面一定是 0）。合計 <b>' + (e0 + e1) + '</b> 種。';
+  }
+  rng.addEventListener('input', function () { if (timer) { clearInterval(timer); timer = null; play.textContent = '▶ 從 n = 1 長到 6'; } draw(); });
+  play.addEventListener('click', function () {
+    if (timer) { clearInterval(timer); timer = null; play.textContent = '▶ 從 n = 1 長到 6'; return; }
+    rng.value = 1; draw(); play.textContent = '❚❚ 暫停';
+    timer = setInterval(function () { if (+rng.value >= 6) { clearInterval(timer); timer = null; play.textContent = '▶ 從 n = 1 長到 6'; return; } rng.value = +rng.value + 1; draw(); }, 1100);
+  });
+  draw();
+})();
+
+/* ================= 第 3 關：Kadane ================= */
+(function () {
+  var host = $('#demo-kadane'), arr = [3, -4, 5, -1, 2, -6, 4, 3];
+  host.innerHTML = '<div class="row"><button type="button" class="btn rnd">換一組數字</button></div><div class="svgwrap"></div><div class="dmsg"></div>';
+  var wrap = $('.svgwrap', host), msg = $('.dmsg', host), ctl;
+  var dp, start, best, bs, be;
+  function calc() {
+    dp = []; start = []; best = -1e9; bs = 0; be = 0;
+    arr.forEach(function (v, i) {
+      if (i === 0 || dp[i - 1] <= 0) { dp[i] = v; start[i] = i; } else { dp[i] = dp[i - 1] + v; start[i] = start[i - 1]; }
+      if (dp[i] > best) { best = dp[i]; bs = start[i]; be = i; }
+    });
+  }
+  function draw(k) {
+    var n = arr.length, W = n * 60 + 20, y0 = 105, sc = 9, s = '<svg viewBox="0 0 ' + W + ' 250" width="' + W + '" role="img" aria-label="Kadane 示範">';
+    if (k === n) s += '<rect class="sv-best" x="' + (10 + bs * 60) + '" y="8" width="' + ((be - bs + 1) * 60) + '" height="190" rx="8"/>';
+    else if (k > 0) s += '<rect class="sv-seg" x="' + (10 + start[k - 1] * 60) + '" y="8" width="' + ((k - 1 - start[k - 1] + 1) * 60) + '" height="190" rx="8"/>';
+    s += '<line class="sv-line" x1="10" x2="' + (W - 10) + '" y1="' + y0 + '" y2="' + y0 + '"/>';
+    arr.forEach(function (v, i) {
+      var cx = 40 + i * 60, top = v >= 0 ? y0 - v * sc : y0, ht = Math.abs(v) * sc;
+      s += '<rect class="' + (v >= 0 ? 'sv-pos' : 'sv-neg') + (i === k - 1 ? ' sv-cur' : '') + '" x="' + (cx - 16) + '" y="' + top + '" width="32" height="' + Math.max(ht, 2) + '" rx="3"/>';
+      s += '<text class="sv-t" x="' + cx + '" y="' + (v >= 0 ? top - 6 : top + ht + 15) + '">' + v + '</text>';
+      var on = i < k, cur = i === k - 1 && k < n + 1;
+      s += '<rect class="' + (cur ? 'sv-boxcur' : (on ? 'sv-boxon' : 'sv-box')) + '" x="' + (cx - 22) + '" y="208" width="44" height="30" rx="6"/>';
+      if (on) s += '<text class="' + (cur ? 'sv-tw' : 'sv-t') + '" x="' + cx + '" y="228">' + dp[i] + '</text>';
+    });
+    s += '<text class="sv-ts" x="10" y="248" style="text-anchor:start">下方方塊是 dp[i]（以第 i 個結尾的最大和）</text></svg>';
+    wrap.innerHTML = s;
+    if (k === 0) msg.innerHTML = '一個一個往右看：前面累積的和是正的就「接上去」，否則「重新開始」。';
+    else if (k === n) msg.innerHTML = '答案是所有 dp 裡最大的：<b>' + best + '</b>（綠色區段）。';
+    else {
+      var i = k - 1;
+      msg.innerHTML = i === 0 ? 'dp[0] = ' + arr[0] + '（第一個數字，自己開始）' :
+        (dp[i - 1] > 0 ? '前面的和 ' + dp[i - 1] + ' 是正的 → <b>接上去</b>：' + dp[i - 1] + ' + ' + arr[i] + ' = <b>' + dp[i] + '</b>'
+          : '前面的和 ' + dp[i - 1] + ' 不是正的 → <b>重新開始</b>：dp[' + i + '] = ' + arr[i]);
+    }
+  }
+  function init() { calc(); ctl.set(0); }
+  ctl = controls(host, { total: function () { return arr.length; }, onChange: draw, ms: 800 });
+  $('.rnd', host).addEventListener('click', function () { arr = []; for (var i = 0; i < 8; i++) arr.push(rnd(-6, 9)); ctl.stop(); init(); });
+  init();
+})();
+
+/* ================= 第 3 關：LIS ================= */
+(function () {
+  var host = $('#demo-lis'), arr = [2, 4, 1, 3, 6, 4, 6, 9];
+  host.innerHTML = '<div class="row"><button type="button" class="btn rnd">換一組數字</button></div><div class="svgwrap"></div><div class="dmsg"></div>';
+  var wrap = $('.svgwrap', host), msg = $('.dmsg', host), ctl, dp, prev, bi;
+  function calc() {
+    dp = []; prev = []; bi = 0;
+    arr.forEach(function (v, i) {
+      dp[i] = 1; prev[i] = -1;
+      for (var j = 0; j < i; j++) if (arr[j] < v && dp[j] + 1 > dp[i]) { dp[i] = dp[j] + 1; prev[i] = j; }
+      if (dp[i] > dp[bi]) bi = i;
+    });
+  }
+  function chainOf() { var c = {}, i = bi; while (i >= 0) { c[i] = true; i = prev[i]; } return c; }
+  function draw(k) {
+    var n = arr.length, W = n * 60 + 20, base = 170, sc = 15, s = '<svg viewBox="0 0 ' + W + ' 265" width="' + W + '" role="img" aria-label="LIS 示範">', cands = {}, pj = -1, chain = k === n ? chainOf() : {};
+    if (k > 0 && k < n + 1 && k !== n) { for (var j = 0; j < k - 1; j++) if (arr[j] < arr[k - 1]) cands[j] = true; pj = prev[k - 1]; }
+    s += '<line class="sv-line" x1="10" x2="' + (W - 10) + '" y1="' + base + '" y2="' + base + '"/>';
+    if (pj >= 0) { var x1 = 40 + pj * 60, x2 = 40 + (k - 1) * 60, yt = base - arr[pj] * sc - 24; s += '<path class="sv-arrow" d="M' + x1 + ' ' + (base - arr[pj] * sc - 20) + ' Q ' + ((x1 + x2) / 2) + ' ' + (yt - 34) + ' ' + x2 + ' ' + (base - arr[k - 1] * sc - 22) + '" marker-end="url(#ah2)"/>'; }
+    s += '<defs><marker id="ah2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#2c59e8"/></marker></defs>';
+    arr.forEach(function (v, i) {
+      var cx = 40 + i * 60, ht = v * sc, cls = (chain[i] ? 'sv-chain' : 'sv-pos') + (i === k - 1 && k !== n ? ' sv-cur' : '') + (cands[i] ? ' sv-cand' : '');
+      s += '<rect class="' + cls + '" x="' + (cx - 16) + '" y="' + (base - ht) + '" width="32" height="' + ht + '" rx="3"/>';
+      s += '<text class="sv-t" x="' + cx + '" y="' + (base - ht - 6) + '">' + v + '</text>';
+      var on = i < k, cur = i === k - 1 && k !== n;
+      s += '<rect class="' + (cur ? 'sv-boxcur' : (on ? 'sv-boxon' : 'sv-box')) + '" x="' + (cx - 22) + '" y="196" width="44" height="30" rx="6"/>';
+      if (on) s += '<text class="' + (cur ? 'sv-tw' : 'sv-t') + '" x="' + cx + '" y="216">' + dp[i] + '</text>';
+    });
+    s += '<text class="sv-ts" x="10" y="256" style="text-anchor:start">下方方塊是 dp[i]（以第 i 個結尾的最長遞增長度）；黃框＝比它小的候選</text></svg>';
+    wrap.innerHTML = s;
+    if (k === 0) msg.innerHTML = '每個數字都問：前面有哪些比我小的？接在其中 dp 最大的後面。';
+    else if (k === n) { var seq = [], i = bi; while (i >= 0) { seq.unshift(arr[i]); i = prev[i]; } msg.innerHTML = '答案是 max(dp) = <b>' + dp[bi] + '</b>，其中一條最長序列是（綠色）：<b>' + seq.join(' → ') + '</b>'; }
+    else {
+      var q = k - 1, c = Object.keys(cands).map(function (x) { return arr[x]; });
+      msg.innerHTML = c.length ? 'a[' + q + '] = ' + arr[q] + '，前面比它小的有 ' + c.join('、') + '，接在 dp 最大的後面：dp[' + q + '] = ' + (dp[q] - 1) + ' + 1 = <b>' + dp[q] + '</b>'
+        : 'a[' + q + '] = ' + arr[q] + '，前面沒有比它小的，只能自己開始：dp[' + q + '] = <b>1</b>';
+    }
+  }
+  ctl = controls(host, { total: function () { return arr.length; }, onChange: draw, ms: 900 });
+  function init() { calc(); ctl.set(0); }
+  $('.rnd', host).addEventListener('click', function () { arr = []; for (var i = 0; i < 8; i++) arr.push(rnd(1, 9)); ctl.stop(); init(); });
+  init();
+})();
+
+/* ================= 第 4 關：零錢 ================= */
+(function () {
+  var host = $('#demo-coin');
+  host.innerHTML = '<div class="row"><span>面額</span><span class="chips" role="group" aria-label="選擇面額"></span><label>目標金額 = <b class="tv">8</b></label><input type="range" min="1" max="20" value="8" aria-label="目標金額"></div><div class="tbl"></div>';
+  var COINS = [1, 2, 4, 5, 10], on = { 1: true, 2: false, 4: true, 5: true, 10: false };
+  var chips = $('.chips', host), rng = $('input', host), tv = $('.tv', host);
+  COINS.forEach(function (c) { var b = h('button', 'chip' + (on[c] ? ' on' : ''), c); b.type = 'button'; b.setAttribute('aria-pressed', on[c]); b.dataset.c = c; chips.appendChild(b); });
+  var INF = 1e9;
+  var t = stepTable($('.tbl', host), function () {
+    var T = +rng.value, coins = COINS.filter(function (c) { return on[c]; }), dp = [0], ch = [0], steps = [], labels = [], j;
+    for (j = 1; j <= T; j++) {
+      var parts = [], vals = [], deps = [], best = INF, bc = 0;
+      coins.forEach(function (c) { if (c <= j) { var v = dp[j - c] >= INF ? INF : dp[j - c] + 1; parts.push('dp[' + (j - c) + ']+1'); vals.push(v >= INF ? '∞' : v); deps.push([0, j - c]); if (v < best) { best = v; bc = c; } } });
+      dp[j] = best; ch[j] = bc;
+      steps.push({ r: 0, c: j, v: best >= INF ? '∞' : best, deps: deps, text: parts.length ? 'dp[' + j + '] = min(' + parts.join(', ') + ') = min(' + vals.join(', ') + ') = <b>' + (best >= INF ? '∞（湊不出）' : best) + '</b>' : 'dp[' + j + '] = ∞（沒有面額可用）' });
+    }
+    for (j = 0; j <= T; j++) labels.push(j);
+    var rem = T, g = []; coins.slice().sort(function (a, b) { return b - a; }).forEach(function (c) { while (rem >= c) { g.push(c); rem -= c; } });
+    var gok = rem === 0 && coins.length > 0, d = [], p = [[0, T]], x = T;
+    if (dp[T] < INF) { while (x > 0) { d.push(ch[x]); x -= ch[x]; p.push([0, x]); } }
+    var out = '貪心（先拿大的）：' + (gok ? g.join('+') + ' = <b>' + g.length + '</b> 個' : '湊不出') + '　DP：' + (dp[T] < INF ? d.join('+') + ' = <b>' + dp[T] + '</b> 個（綠色路徑）' : '湊不出');
+    if (gok && dp[T] < INF && dp[T] < g.length) out += '<br><b>貪心不是最佳，這就是要用 DP 的原因。</b>';
+    return { rowLabels: ['dp'], colLabels: labels, init: [{ r: 0, c: 0, v: 0 }], steps: steps, path: dp[T] < INF ? p : null,
+      intro: '每一格試每一種面額：從「少拿一個這種硬幣」的格子推過來，取最小。試試只留 1、4、5 湊 8。', outro: out };
+  });
+  chips.addEventListener('click', function (e) { var b = e.target.closest('.chip'); if (!b) return; var c = +b.dataset.c; on[c] = !on[c]; b.classList.toggle('on', on[c]); b.setAttribute('aria-pressed', on[c]); t.rebuild(); });
+  rng.addEventListener('input', function () { tv.textContent = rng.value; t.rebuild(); });
+})();
+
+/* ================= 第 4 關：迴圈方向 ================= */
+(function () {
+  var host = $('#demo-dir'), mode = 'asc';
+  host.innerHTML = '<div class="row"><span>內層迴圈</span><div class="seg" role="group"><button type="button" data-m="asc" class="on">由小到大</button><button type="button" data-m="desc">由大到小</button></div></div><div class="tbl"></div>';
+  var t = stepTable($('.tbl', host), function () {
+    var W = 9, w = 3, v = 4, dp = [], steps = [], labels = [], init = [], j;
+    for (j = 0; j <= W; j++) { dp[j] = 0; labels.push(j); init.push({ r: 0, c: j, v: 0 }); }
+    var order = []; if (mode === 'asc') { for (j = w; j <= W; j++) order.push(j); } else { for (j = W; j >= w; j--) order.push(j); }
+    order.forEach(function (j) {
+      var old = dp[j], cand = dp[j - w] + v, nv = Math.max(old, cand); dp[j] = nv;
+      steps.push({ r: 0, c: j, v: nv, deps: [[0, j - w]], text: 'j = ' + j + '：dp[' + j + '] = max(' + old + '，dp[' + (j - w) + ']+4 = ' + cand + ') = <b>' + nv + '</b>' });
+    });
+    var used = dp[W] / v;
+    return { rowLabels: ['dp'], colLabels: labels, init: init, steps: steps,
+      intro: mode === 'asc' ? '由小到大：算 dp[6] 時用到的 dp[3] 已經放過這個物品了……' : '由大到小：算 dp[j] 時用到的 dp[j-3]，還是「沒放過這個物品」的舊值。',
+      outro: '最後 dp[9] = ' + dp[W] + '，這個物品被用了 <b>' + used + '</b> 次 → ' + (used > 1 ? '這是<b>無限背包</b>（可重複使用）' : '這是 <b>0/1 背包</b>（最多一次）') };
+  });
+  $('.seg', host).addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; mode = b.dataset.m; $$('.seg button', host).forEach(function (x) { x.classList.toggle('on', x === b); }); t.rebuild(); });
+})();
+
+/* ================= 第 5 關：網格 ================= */
+(function () {
+  var host = $('#demo-grid'), N = 5, g;
+  host.innerHTML = '<div class="row"><button type="button" class="btn rnd">換一張地圖</button><span style="color:var(--muted);font-size:.9rem">小字是格子的數字，大字是 dp</span></div><div class="tbl"></div>';
+  function gen() { g = []; for (var i = 0; i < N; i++) { g.push([]); for (var j = 0; j < N; j++) g[i].push(rnd(1, 9)); } }
+  gen();
+  var t = stepTable($('.tbl', host), function () {
+    var dp = [], steps = [], labels = [], i, j;
+    for (i = 0; i < N; i++) { dp.push([]); labels.push(i); }
+    for (i = 0; i < N; i++) for (j = 0; j < N; j++) {
+      var deps = [], txt;
+      if (i === 0 && j === 0) { dp[i][j] = g[i][j]; steps.push({ r: i, c: j, v: dp[i][j], deps: [], text: '起點：dp[0][0] = ' + g[0][0] }); continue; }
+      var up = i > 0 ? dp[i - 1][j] : 1e9, left = j > 0 ? dp[i][j - 1] : 1e9;
+      if (i > 0) deps.push([i - 1, j]); if (j > 0) deps.push([i, j - 1]);
+      dp[i][j] = Math.min(up, left) + g[i][j];
+      txt = (i > 0 && j > 0) ? 'dp[' + i + '][' + j + '] = min(上 ' + up + '，左 ' + left + ') + ' + g[i][j] + ' = <b>' + dp[i][j] + '</b>' : 'dp[' + i + '][' + j + '] = ' + (i > 0 ? '上 ' + up : '左 ' + left) + ' + ' + g[i][j] + ' = <b>' + dp[i][j] + '</b>（邊界只有一個來源）';
+      steps.push({ r: i, c: j, v: dp[i][j], deps: deps, text: txt });
+    }
+    var p = [[N - 1, N - 1]], a = N - 1, b = N - 1;
+    while (a > 0 || b > 0) { if (a === 0) b--; else if (b === 0) a--; else if (dp[a - 1][b] <= dp[a][b - 1]) a--; else b--; p.push([a, b]); }
+    return { rowLabels: labels, colLabels: labels, init: [], steps: steps, path: p, sub: function (r, c) { return g[r][c]; },
+      intro: '從左上走到右下，只能往右或往下。每一格 = min(上, 左) + 自己。', outro: '最小路徑和 = <b>' + dp[N - 1][N - 1] + '</b>，綠色是最佳路線（從終點往回找較小的來源）。' };
+  });
+  $('.rnd', host).addEventListener('click', function () { gen(); t.rebuild(); });
+})();
+
+/* ================= 第 6 關：LCS / 編輯距離 ================= */
+(function () {
+  var host = $('#demo-seq'), mode = 'lcs';
+  var DEF = { lcs: ['ABCBDAB', 'BDCABA'], ed: ['KITTEN', 'SITTING'] };
+  host.innerHTML = '<div class="row"><div class="seg" role="group"><button type="button" data-m="lcs" class="on">LCS</button><button type="button" data-m="ed">編輯距離</button></div>' +
+    '<label>s <input class="s" maxlength="8" size="9" aria-label="字串 s"></label><label>t <input class="t" maxlength="8" size="9" aria-label="字串 t"></label></div><div class="tbl"></div>';
+  var si = $('.s', host), ti = $('.t', host);
+  si.value = DEF.lcs[0]; ti.value = DEF.lcs[1];
+  function clean(x) { return x.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 8); }
+  var t = stepTable($('.tbl', host), function () {
+    var s = clean(si.value), u = clean(ti.value), n = s.length, m = u.length, dp = [], steps = [], init = [], i, j;
+    for (i = 0; i <= n; i++) { dp.push([]); for (j = 0; j <= m; j++) dp[i].push(0); }
+    for (i = 0; i <= n; i++) { dp[i][0] = mode === 'ed' ? i : 0; init.push({ r: i, c: 0, v: dp[i][0] }); }
+    for (j = 1; j <= m; j++) { dp[0][j] = mode === 'ed' ? j : 0; init.push({ r: 0, c: j, v: dp[0][j] }); }
+    for (i = 1; i <= n; i++) for (j = 1; j <= m; j++) {
+      var eq = s[i - 1] === u[j - 1], up = dp[i - 1][j], lf = dp[i][j - 1], dg = dp[i - 1][j - 1], tx, deps;
+      if (mode === 'lcs') {
+        if (eq) { dp[i][j] = dg + 1; deps = [[i - 1, j - 1]]; tx = s[i - 1] + ' = ' + u[j - 1] + '，相同 → 左上 ' + dg + ' + 1 = <b>' + dp[i][j] + '</b>'; }
+        else { dp[i][j] = Math.max(up, lf); deps = [[i - 1, j], [i, j - 1]]; tx = s[i - 1] + ' ≠ ' + u[j - 1] + '，不同 → max(上 ' + up + '，左 ' + lf + ') = <b>' + dp[i][j] + '</b>'; }
+      } else {
+        if (eq) { dp[i][j] = dg; deps = [[i - 1, j - 1]]; tx = s[i - 1] + ' = ' + u[j - 1] + '，相同 → 沿用左上 <b>' + dg + '</b>'; }
+        else { dp[i][j] = Math.min(up, lf, dg) + 1; deps = [[i - 1, j], [i, j - 1], [i - 1, j - 1]]; tx = s[i - 1] + ' ≠ ' + u[j - 1] + '，不同 → min(上 ' + up + '，左 ' + lf + '，左上 ' + dg + ') + 1 = <b>' + dp[i][j] + '</b>'; }
+      }
+      steps.push({ r: i, c: j, v: dp[i][j], deps: deps, text: tx });
+    }
+    var rl = ['∅'], cl = ['∅']; for (i = 0; i < n; i++) rl.push(s[i]); for (j = 0; j < m; j++) cl.push(u[j]);
+    var p = [[n, m]], a = n, b = m, common = '';
+    while (a > 0 || b > 0) {
+      if (mode === 'lcs') {
+        if (a === 0 || b === 0) break;
+        if (s[a - 1] === u[b - 1]) { common = s[a - 1] + common; a--; b--; } else if (dp[a - 1][b] >= dp[a][b - 1]) a--; else b--;
+      } else {
+        if (a > 0 && b > 0 && s[a - 1] === u[b - 1] && dp[a][b] === dp[a - 1][b - 1]) { a--; b--; }
+        else if (a > 0 && b > 0 && dp[a][b] === dp[a - 1][b - 1] + 1) { a--; b--; }
+        else if (a > 0 && dp[a][b] === dp[a - 1][b] + 1) a--;
+        else b--;
+      }
+      p.push([a, b]);
+    }
+    return { rowLabels: rl, colLabels: cl, init: init, steps: steps, path: (n && m) ? p : null,
+      intro: mode === 'lcs' ? '第 0 列與第 0 行是空字串，值為 0。每格看兩個字相不相同。' : '第 0 列與第 0 行：要把空字串變成前 j 個字，需要 j 次插入。',
+      outro: mode === 'lcs' ? 'LCS 長度 = <b>' + dp[n][m] + '</b>' + (common ? '，其中一條：<b>' + common + '</b>（沿綠色路徑往回找）' : '') : '編輯距離 = <b>' + dp[n][m] + '</b>（綠色是一條最佳路徑）' };
+  });
+  $('.seg', host).addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; mode = b.dataset.m; $$('.seg button', host).forEach(function (x) { x.classList.toggle('on', x === b); }); si.value = DEF[mode][0]; ti.value = DEF[mode][1]; t.rebuild(); });
+  var tm = null;
+  function onType() { si.value = clean(si.value); ti.value = clean(ti.value); clearTimeout(tm); tm = setTimeout(t.rebuild, 250); }
+  si.addEventListener('input', onType); ti.addEventListener('input', onType);
+})();
+
+/* ================= 第 7 關：翻牌 ================= */
+$$('.flip').forEach(function (b) { b.addEventListener('click', function () { var on = b.classList.toggle('on'); b.setAttribute('aria-pressed', on); }); });
+
+/* ================= 第 8 關：矩陣連乘 ================= */
+(function () {
+  var host = $('#demo-chain'), PRE = [[7, 10, 22, 37], [10, 30, 5, 60], [40, 20, 30, 10, 30]], cur = 0;
+  host.innerHTML = '<div class="row"><span>範例</span><div class="seg" role="group"></div></div><p class="dims" style="margin:0 0 8px"></p><div class="tbl"></div>';
+  var seg = $('.seg', host);
+  PRE.forEach(function (d, i) { var b = h('button', i === 0 ? 'on' : '', '範例 ' + (i + 1)); b.type = 'button'; b.dataset.i = i; seg.appendChild(b); });
+  var t = stepTable($('.tbl', host), function () {
+    var d = PRE[cur], n = d.length - 1, dp = [], sp = [], steps = [], labels = [], i, j, k, L;
+    for (i = 0; i < n; i++) { dp.push([]); sp.push([]); labels.push('A' + (i + 1)); for (j = 0; j < n; j++) { dp[i].push(0); sp[i].push(-1); } }
+    $('.dims', host).innerHTML = d.slice(0, n).map(function (x, i) { return 'A' + (i + 1) + ' = ' + x + '×' + d[i + 1]; }).join('　');
+    for (L = 1; L < n; L++) for (i = 0; i + L < n; i++) {
+      j = i + L; var best = 1e18, bk = i, cs = [];
+      for (k = i; k < j; k++) { var c = dp[i][k] + dp[k + 1][j] + d[i] * d[k + 1] * d[j + 1]; cs.push('在 A' + (k + 1) + ' 後切：' + dp[i][k] + '+' + dp[k + 1][j] + '+' + d[i] + '×' + d[k + 1] + '×' + d[j + 1] + ' = ' + c); if (c < best) { best = c; bk = k; } }
+      dp[i][j] = best; sp[i][j] = bk;
+      steps.push({ r: i, c: j, v: best, deps: [[i, bk], [bk + 1, j]], text: 'A' + (i + 1) + '～A' + (j + 1) + '：' + cs.join('；') + ' → 取最小 <b>' + best + '</b>' });
+    }
+    function par(a, b) { return a === b ? 'A' + (a + 1) : '(' + par(a, sp[a][b]) + ' ' + par(sp[a][b] + 1, b) + ')'; }
+    var init = []; for (i = 0; i < n; i++) init.push({ r: i, c: i, v: 0 });
+    return { rowLabels: labels, colLabels: labels, init: init, steps: steps, dead: function (r, c) { return c < r; },
+      intro: '先填對角線（單獨一個矩陣，0 次）。再填長度 2、長度 3 的區間：每格試每個切點。', outro: '最少 <b>' + dp[0][n - 1] + '</b> 次乘法，乘的順序：<b>' + par(0, n - 1) + '</b>' };
+  });
+  seg.addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; cur = +b.dataset.i; $$('button', seg).forEach(function (x) { x.classList.toggle('on', x === b); }); t.rebuild(); });
+})();
+
+/* ================= 第 9 關：位元集合 ================= */
+(function () {
+  var host = $('#demo-mask'), N = 5, S = 5, last = '', NAMES = ['A', 'B', 'C', 'D', 'E'];
+  host.innerHTML = '<div class="people"></div><div class="maskout"></div><div class="grid32" role="group" aria-label="所有 32 種集合"></div>';
+  var pp = $('.people', host), mo = $('.maskout', host), gr = $('.grid32', host);
+  function bin(x) { var s = ''; for (var i = N - 1; i >= 0; i--) s += (x >> i) & 1; return s; }
+  function render() {
+    pp.innerHTML = ''; gr.innerHTML = '';
+    NAMES.forEach(function (nm, i) { var b = h('button', 'person' + (((S >> i) & 1) ? ' on' : ''), nm + '<small>第 ' + i + ' 位元</small>'); b.type = 'button'; b.dataset.i = i; b.setAttribute('aria-pressed', ((S >> i) & 1) === 1); pp.appendChild(b); });
+    var set = NAMES.filter(function (nm, i) { return (S >> i) & 1; });
+    mo.innerHTML = '<div>集合 = { ' + (set.join('、') || '空') + ' }</div><div>二進位（由第 ' + (N - 1) + ' 位元寫到第 0 位元）：<span class="bin">' + bin(S) + '</span>　十進位：<b>' + S + '</b></div><div>' + (last || '點上面的人，看整數怎麼變。') + '</div>';
+    for (var m = 0; m < (1 << N); m++) { var c = h('button', 'gcell' + (m === S ? ' cur' : ''), m); c.type = 'button'; c.dataset.m = m; c.setAttribute('aria-label', '集合 ' + m + '，二進位 ' + bin(m)); gr.appendChild(c); }
+  }
+  pp.addEventListener('click', function (e) {
+    var b = e.target.closest('.person'); if (!b) return; var i = +b.dataset.i;
+    if ((S >> i) & 1) { S = S & ~(1 << i); last = '移除 ' + NAMES[i] + '：<code>S & ~(1 &lt;&lt; ' + i + ')</code> = ' + S; }
+    else { S = S | (1 << i); last = '加入 ' + NAMES[i] + '：<code>S | (1 &lt;&lt; ' + i + ')</code> = ' + S; }
+    last += '　檢查 ' + NAMES[i] + ' 在不在：<code>(S &gt;&gt; ' + i + ') & 1</code> = ' + ((S >> i) & 1); render();
+  });
+  gr.addEventListener('click', function (e) { var b = e.target.closest('.gcell'); if (!b) return; S = +b.dataset.m; last = '集合共 2<sup>' + N + '</sup> = ' + (1 << N) + ' 種，dp[S] 就是替每一種各記一個答案。'; render(); });
+  render();
+})();
+
+/* ================= 題目清單與進度 ================= */
+var BASE = "https://zerojudge.tw/ShowProblem?problemid=";
+var PROBLEMS = {
+  1: [
+    { id: "d212", title: "東東爬樓梯", focus: "套模板：先建表再查詢" },
+    { id: "d038", title: "Brick Wall Patterns", focus: "最後一塊磚怎麼放？" },
+    { id: "a519", title: "12459 - Bees' ancestors", star: true, focus: "第 n 代 = 前一代 + 前兩代" }
+  ],
+  2: [
+    { id: "a388", title: "00580 - Critical Mass", focus: "依結尾連續 U 分三種狀態，答案 = 總數 − 安全數" },
+    { id: "e721", title: "108北二 7.奪寶奇謀", focus: "同價值先加總；取 i 就不能取 i-1" },
+    { id: "b589", title: "超級馬拉松賽", focus: "三種選擇狀態，先畫轉換圖" },
+    { id: "c878", title: "107北二 5.議會質詢紀錄", focus: "請假次數 × 連續代理天數，要取模" }
+  ],
+  3: [
+    { id: "d784", title: "一、連續元素的和", focus: "Kadane；答案可能是負數" },
+    { id: "b565", title: "102北二 5.採蘑菇攻略問題", focus: "同一型再寫一次" },
+    { id: "d052", title: "11456 - Trainsorting", star: true, focus: "LIS；此題為 UVa 11456，原題可能還要考慮遞減，以題面為準（我沒測過）" }
+  ],
+  4: [
+    { id: "d904", title: "換零錢", focus: "最少硬幣數；對照 1、4、5 的例子" },
+    { id: "d133", title: "00357 - Let Me Count The Ways", focus: "數方法數，先建表" },
+    { id: "d253", title: "00674 - Coin Change", focus: "同型；面額放外層 = 數組合" },
+    { id: "d119", title: "有獎徵答：換零錢", focus: "面額多、金額到 50000" },
+    { id: "b184", title: "5. 裝貨櫃問題", star: true, focus: "0/1 背包；內層由大到小" },
+    { id: "b131", title: "背包問題", focus: "再一題 0/1 背包" },
+    { id: "a522", title: "12455 - Bars", focus: "能不能湊出？dp |= dp << m" }
+  ],
+  5: [
+    { id: "d378", title: "最小路徑", focus: "網格最小路徑和；注意邊界與輸出格式" },
+    { id: "b840", title: "104北二 4.農作物採收問題", focus: "列壓縮 + Kadane，O(N³)" }
+  ],
+  6: [
+    { id: "c001", title: "10405 - Longest Common Subsequence", focus: "LCS 長度" },
+    { id: "a133", title: "10066 - The Twin Towers", focus: "LCS，輸入是數列" },
+    { id: "a252", title: "Another LCS", star: true, focus: "三字串 LCS，多一維" },
+    { id: "f507", title: "AGTC", focus: "編輯距離；初始 dp[i][0] = i" }
+  ],
+  7: [
+    { id: "m373", title: "APCS 112/10 4.投資遊戲", focus: "Kadane 加一維：已跳過 j 次" },
+    { id: "i402", title: "APCS 111/6 4.內積", focus: "枚舉偏移量 + 最大連續區間" },
+    { id: "f608", title: "APCS 110/1 4.飛黃騰達", focus: "先排序 x，再對 y 做 LIS（非嚴格遞增）" },
+    { id: "g278", title: "APCS 110/9 4.美食博覽會", focus: "滑動視窗 + 滾動 dp" },
+    { id: "f314", title: "APCS 109/10 3.勇者修煉", focus: "每一列由左、由右各掃一次" }
+  ],
+  8: [
+    { id: "o188", title: "矩陣乘法鏈", focus: "區間 DP 裸題" },
+    { id: "m934", title: "APCS 113/1 4.合併成本", focus: "區間 DP；要記下每段合併後的值" },
+    { id: "c481", title: "104全國 4.彩色紙條", focus: "相同顏色可延伸，否則枚舉切點" }
+  ],
+  9: [
+    { id: "c543", title: "四、階梯數字(ladder)", star: true, focus: "數位 DP；對照教學頁題解" },
+    { id: "d879", title: "Forming Quiz teams", focus: "狀態壓縮；固定找第一個未分組的人" },
+    { id: "f171", title: "快樂數字", focus: "位數 × 結尾數字 × 壓縮狀態，取模" },
+    { id: "f582", title: "APCS 109/7 4.病毒演化", focus: "樹上 DP" },
+    { id: "d109", title: "NOIP 2008 3.傳紙條", focus: "雙路徑同步走，這份裡最難的之一" },
+    { id: "c528", title: "（題名未確認）", focus: "選修：筆記標為單調隊列優化範例" }
+  ]
+};
+var KEY = "dp-course-v1", done = new Set();
+try { var raw = localStorage.getItem(KEY); if (raw) done = new Set(JSON.parse(raw)); } catch (e) { done = new Set(); }
+function save() { try { localStorage.setItem(KEY, JSON.stringify(Array.from(done))); } catch (e) { /* 儲存失敗時仍可使用 */ } }
+var CHECK_SVG = '<svg viewBox="0 0 16 16"><path d="M3 8.5l3.2 3.2L13 5"/></svg>';
+Object.keys(PROBLEMS).forEach(function (st) {
+  var ul = $('ul.plist[data-stage="' + st + '"]');
+  PROBLEMS[st].forEach(function (p) {
+    var li = h('li', '', '<span class="ck"><input type="checkbox" data-key="' + p.id + '"><span class="box">' + CHECK_SVG + '</span></span><div><div class="phead"><span class="pid"></span><a target="_blank" rel="noopener"></a><span class="star" hidden>★ 教學頁</span></div><p class="focus"></p></div>');
+    li.dataset.key = p.id;
+    $('.pid', li).textContent = p.id;
+    var a = $('a', li); a.href = BASE + p.id; a.textContent = p.title; a.setAttribute('aria-label', p.id + ' ' + p.title + '（在新分頁開啟 ZeroJudge）');
+    if (p.star) $('.star', li).hidden = false;
+    $('.focus', li).textContent = p.focus;
+    $('input', li).setAttribute('aria-label', '標記 ' + p.id + ' 為已完成');
+    ul.appendChild(li);
+  });
+});
+var sections = $$('section.stage'), tocList = $('#toc-list');
+sections.forEach(function (sec) {
+  var li = h('li'), a = h('a', '', '<span class="t"></span><span class="n"></span>');
+  a.href = '#' + sec.id; a.dataset.sec = sec.id; $('.t', a).textContent = sec.dataset.title; li.appendChild(a); tocList.appendChild(li);
+});
+var totalProblems = Object.keys(PROBLEMS).reduce(function (s, k) { return s + PROBLEMS[k].length; }, 0);
+function refresh() {
+  $$('input[data-key]').forEach(function (cb) { var on = done.has(cb.dataset.key); cb.checked = on; cb.closest('li').classList.toggle('done', on); });
+  var total = 0;
+  sections.forEach(function (sec) {
+    var a = $('a[data-sec="' + sec.id + '"]', tocList), n = $('.n', a), m = /^s(\d+)$/.exec(sec.id);
+    if (m && PROBLEMS[m[1]]) { var list = PROBLEMS[m[1]], c = list.filter(function (p) { return done.has(p.id); }).length; total += c; n.textContent = c + '/' + list.length; a.classList.toggle('full', c === list.length); }
+    else n.textContent = '';
+  });
+  $('#ov-num').textContent = total + ' / ' + totalProblems;
+  $('#ov-bar').style.width = (totalProblems ? total / totalProblems * 100 : 0) + '%';
 }
+document.addEventListener('change', function (e) { var t = e.target; if (t && t.matches && t.matches('input[data-key]')) { if (t.checked) done.add(t.dataset.key); else done.delete(t.dataset.key); save(); refresh(); } });
+$('#reset').addEventListener('click', function () { if (done.size && confirm('確定要清除所有勾選的進度嗎？')) { done = new Set(); save(); refresh(); } });
+if ('IntersectionObserver' in window) {
+  var obs = new IntersectionObserver(function (es) { es.forEach(function (en) { if (en.isIntersecting) { $$('a', tocList).forEach(function (a) { a.removeAttribute('aria-current'); }); var a = $('a[data-sec="' + en.target.id + '"]', tocList); if (a) a.setAttribute('aria-current', 'true'); } }); }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(function (s) { obs.observe(s); });
+}
+refresh();
 </script>
-
 </body>
 </html>
