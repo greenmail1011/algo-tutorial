@@ -187,6 +187,24 @@
   footer p { margin:0 0 6px; }
   .reset { margin-top:8px; }
   @media (prefers-reduced-motion:reduce){ *{ transition:none !important; scroll-behavior:auto !important; } }
+  ul.plist li > div { min-width:0; }
+  .practice-animation { margin:12px 0; }
+  .demo-drawer > summary, .practice-animation > summary {
+    display:flex; align-items:center; gap:8px; padding:12px 14px;
+  }
+  .demo-drawer > summary::after, .practice-animation > summary::after {
+    content:"展開"; margin-left:auto; flex-shrink:0; font-size:.8rem; font-weight:500; color:var(--muted);
+  }
+  .demo-drawer[open] > summary::after, .practice-animation[open] > summary::after { content:"收起"; }
+  .demo-drawer[open] > summary, .practice-animation[open] > summary { border-bottom:1px solid var(--line); }
+  .demo-drawer > .demo { border:0; border-radius:0; margin:0; padding:14px; background:transparent; }
+  .practice-animation > div { padding-top:12px; }
+  .demo-drawer > summary:hover, .practice-animation > summary:hover { background:var(--accent-soft); border-radius:9px; }
+  .practice-animation .dmsg { min-height:6em; }
+  .coin-lesson { margin:10px 0; }
+  .coin-lesson > div { overflow-wrap:anywhere; }
+  .coin-lesson h4 { margin:16px 0 4px; }
+  .coin-lesson pre { max-width:100%; overflow-x:auto; }
 </style>
 </head>
 <body>
@@ -316,6 +334,7 @@ print(max(dp))                  # 答案是所有結尾中最長的</code></pre>
   <p class="idea">金額（容量）當狀態；內層迴圈的方向，決定每個物品能用幾次。</p>
   <div class="demo"><p class="cap">① 湊零錢：貪心 vs DP</p><div id="demo-coin"></div></div>
   <div class="demo"><p class="cap">② 迴圈方向：同一個物品（重 3、值 4），容量 9</p><div id="demo-dir"></div></div>
+  <div class="demo"><p class="cap">③ 數組合方法：d133 / d253 逐格建表</p><p>藍格是更新位置，黃框是相加來源。切換題目可對照範例；每一步只更新一格。</p><div id="demo-coin-ways"></div></div>
   <dl class="fm">
     <div><dt>最少個數</dt><dd><code>dp[j] = min(dp[j], dp[j-c] + 1)</code></dd></div>
     <div><dt>方法數</dt><dd><code>dp[j] += dp[j-c]</code>，面額放外層</dd></div>
@@ -504,6 +523,17 @@ var $ = function (s, r) { return (r || document).querySelector(s); };
 var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
 function h(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
 function rnd(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+/* 第四、第五關的示範預設收起；保留原本 demo 節點及互動狀態。 */
+$$('#s4 .demo, #s5 .demo').forEach(function (demo) {
+  var drawer = h('details', 'demo-drawer');
+  var title = $('.cap', demo);
+  var summary = h('summary');
+  summary.textContent = title ? title.textContent : '網格最小路徑：逐步示範';
+  demo.parentNode.insertBefore(drawer, demo);
+  drawer.appendChild(summary);
+  drawer.appendChild(demo);
+  if (title) title.remove();
+});
 var PAL = ['#2c59e8', '#e8590c', '#2f9e44', '#ae3ec9', '#0c8599', '#c92a2a', '#f08c00', '#5f3dc4'];
 var PALSOFT = ['#e6ecff', '#ffe8d9', '#e0f4e5', '#f6e5fb', '#dff4f7', '#fde3e3', '#fff0d0', '#ebe5fb'];
 
@@ -514,14 +544,16 @@ function controls(host, opt) {
     '<button type="button" class="btn main" data-a="play">▶ 播放</button>' +
     '<button type="button" class="btn" data-a="next">下一步 ›</button>' +
     '<button type="button" class="btn" data-a="end">跳到結尾</button>' +
-    '<button type="button" class="btn" data-a="reset">重來</button>');
+    '<button type="button" class="btn" data-a="reset">重來</button>' +
+    '<label>速度 <select aria-label="播放速度"><option value="0.5">慢速</option><option value="1" selected>正常</option><option value="2">快速</option></select></label><span class="step-count" aria-live="polite"></span>');
   host.appendChild(bar);
   var k = 0, timer = null;
   function B(a) { return bar.querySelector('[data-a="' + a + '"]'); }
   function stop() { if (timer) { clearInterval(timer); timer = null; } B('play').textContent = '▶ 播放'; }
-  function sync() { var t = opt.total(); B('prev').disabled = k <= 0; B('next').disabled = k >= t; B('end').disabled = k >= t; B('reset').disabled = k === 0; }
+  function sync() { var t = opt.total(); B('prev').disabled = k <= 0; B('next').disabled = k >= t; B('end').disabled = k >= t; B('reset').disabled = k === 0; $('.step-count', bar).textContent = '步驟 ' + k + ' / ' + t; }
   function set(v) { var t = opt.total(); k = Math.max(0, Math.min(t, v)); opt.onChange(k); sync(); }
-  function ms() { return typeof opt.ms === 'function' ? opt.ms() : (opt.ms || 650); }
+  function ms() { var base = typeof opt.ms === 'function' ? opt.ms() : (opt.ms || 650); return base / Number($('select', bar).value); }
+  $('select', bar).addEventListener('change', stop);
   bar.addEventListener('click', function (e) {
     var b = e.target.closest('button[data-a]'); if (!b) return; var a = b.dataset.a;
     if (a === 'prev') { stop(); set(k - 1); }
@@ -535,6 +567,8 @@ function controls(host, opt) {
       timer = setInterval(function () { if (k >= opt.total()) { stop(); return; } set(k + 1); if (k >= opt.total()) stop(); }, ms());
     }
   });
+  var drawer = host.closest('details');
+  if (drawer) drawer.addEventListener('toggle', function () { if (!drawer.open) stop(); });
   return { set: set, get: function () { return k; }, stop: stop };
 }
 
@@ -543,7 +577,7 @@ function stepTable(host, getCfg) {
   host.appendChild(h('div', 'dpwrap', '<table class="dp"></table>'));
   var msg = h('div', 'dmsg'); msg.setAttribute('aria-live', 'polite'); host.appendChild(msg);
   var table = $('table', host), cfg = null;
-  var ctl = controls(host, { total: function () { return cfg ? cfg.steps.length : 0; }, onChange: render, ms: function () { return cfg && cfg.steps.length > 14 ? 280 : 650; } });
+  var ctl = controls(host, { total: function () { return cfg ? cfg.steps.length : 0; }, onChange: render, ms: function () { return cfg && cfg.ms ? cfg.ms : (cfg && cfg.steps.length > 14 ? 280 : 650); } });
   function cell(r, c) { return table.querySelector('td[data-r="' + r + '"][data-c="' + c + '"]'); }
   function build() {
     cfg = getCfg();
@@ -798,6 +832,38 @@ function stepTable(host, getCfg) {
   rng.addEventListener('input', function () { tv.textContent = rng.value; t.rebuild(); });
 })();
 
+/* ================= d133 / d253：組合方法數逐步 ================= */
+(function () {
+  var host = $('#demo-coin-ways'), mode = 'd133';
+  host.innerHTML = '<div class="row"><div class="seg" role="group" aria-label="方法數題目"><button type="button" class="on" data-mode="d133" aria-pressed="true">d133：17 元</button><button type="button" data-mode="d253" aria-pressed="false">d253：26 元</button></div><label>目標金額 = <b class="target">17</b><input type="range" min="0" max="30" value="17" aria-label="方法數目標金額"></label></div><p>面額：1、5、10、25、50。表中每列是「加入該面額後」的結果；0 元始終有 1 種方法。</p><div class="tbl"></div><p class="output"></p><details><summary>為什麼交換迴圈會重複計數？</summary><p>用 1、2 湊 3：組合只有 {1,1,1}、{1,2}，共 2 種。若金額在外層，再枚舉最後一枚硬幣，會把 1→2 和 2→1 分別計算，得到 3 種排列。面額外層的 ways 則只保存目前已處理面額的組合。</p></details>';
+  var rng = $('input', host);
+  var t = stepTable($('.tbl', host), function () {
+    var T = +rng.value, coins = [1,5,10,25,50], rows = ['不用硬幣'], labels = [], init = [], steps = [], dp = [];
+    for (var j=0;j<=T;j++) { labels.push(j); dp[j] = j===0 ? 1 : 0; init.push({r:0,c:j,v:dp[j]}); }
+    coins.forEach(function (coin, i) {
+      var r=i+1; rows.push('加入 '+coin+' 元'); init.push({r:r,c:0,v:1});
+      for (var j=1;j<=T;j++) {
+        var old=dp[j], add=j>=coin ? dp[j-coin] : 0;
+        dp[j]=old+add;
+        steps.push({r:r,c:j,v:dp[j],deps:j>=coin ? [[r-1,j],[r,j-coin]] : [[r-1,j]],
+          text:j>=coin ? '面額 '+coin+'、金額 '+j+'：不用 '+coin+' 元的 '+old+' 種（上一列）＋至少用一枚的 '+add+' 種（本列金額 '+(j-coin)+'，再加一枚 '+coin+'）＝<b>'+dp[j]+'</b> 種。'
+          : '金額 '+j+' 小於面額 '+coin+'，不能使用它，沿用上一列的 <b>'+old+'</b> 種。'});
+      }
+    });
+    var output = mode==='d133' ? (dp[T]===1 ? 'There is only 1 way to produce '+T+' cents change.' : 'There are '+dp[T]+' ways to produce '+T+' cents change.') : String(dp[T]);
+    $('.output',host).textContent = '完成建表後，這筆查詢應輸出：'+output;
+    return {rowLabels:rows,colLabels:labels,init:init,steps:steps,
+      intro:'先初始化：不用硬幣時，0 元有 1 種，其餘 0 種。按「下一步」開始加入 1 元硬幣。',
+      outro:'表已建好：ways['+T+'] = <b>'+dp[T]+'</b>。之後每筆金額直接查表，不必重建。這裡用小表展示過程，完整程式請展開下方題目。'};
+  });
+  rng.addEventListener('input',function () { $('.target',host).textContent=rng.value; t.rebuild(); });
+  $('.seg',host).addEventListener('click',function (e) {
+    var b=e.target.closest('button'); if(!b)return; mode=b.dataset.mode;
+    $$('.seg button',host).forEach(function(x){ x.classList.toggle('on',x===b); x.setAttribute('aria-pressed',x===b); });
+    rng.value=mode==='d133'?17:26; $('.target',host).textContent=rng.value; t.rebuild();
+  });
+})();
+
 /* ================= 第 4 關：迴圈方向 ================= */
 (function () {
   var host = $('#demo-dir'), mode = 'asc';
@@ -944,6 +1010,101 @@ $$('.flip').forEach(function (b) { b.addEventListener('click', function () { var
 })();
 
 /* ================= 題目清單與進度 ================= */
+
+/* ---------- 第四、第五關：每題獨立的可播放教學範例 ---------- */
+function practiceConfig(id) {
+  var steps=[], init=[], labels=[], rows=[], i,j;
+  function push(r,c,v,deps,text){steps.push({r:r,c:c,v:v,deps:deps,text:text});}
+  if(id==='d904'){
+    var coins=[1,4,5],T=8,dp=[0],chosen=[];
+    for(j=0;j<=T;j++)labels.push(j);
+    init.push({r:0,c:0,v:0});
+    for(j=1;j<=T;j++){
+      var best=Infinity,dep=[],parts=[];
+      coins.forEach(function(c){if(c<=j){var v=dp[j-c]+1;dep.push([0,j-c]);parts.push('最後拿 '+c+'：dp['+(j-c)+']+1='+v);if(v<best){best=v;chosen[j]=c;}}});
+      dp[j]=best;push(0,j,best,dep,'金額 '+j+'，'+parts.join('；')+'。取最少：<b>'+best+'</b> 枚。');
+    }
+    var x=T,path=[[0,T]],take=[];while(x>0){take.push(chosen[x]);x-=chosen[x];path.push([0,x]);}
+    return {rowLabels:['最少枚數'],colLabels:labels,init:init,steps:steps,path:path,
+      intro:'① 問題：面額 1、4、5 湊 8。② dp[j] 記最少枚數。③ dp[0]=0，其餘視為 ∞。④ 按下一步，試最後一枚的每種可能。',
+      outro:'⑤ 查 dp[8]=2。⑥ 回推 '+take.join(' + ')+'；貪心 5+1+1+1 要 4 枚。'};
+  }
+  if(['d133','d253','d119'].indexOf(id)>=0){
+    var coins=id==='d119'?[1,2,5,10]:[1,5,10,25,50],T=id==='d133'?17:id==='d253'?26:12,dp=[];
+    rows=['不用硬幣'];for(j=0;j<=T;j++){labels.push(j);dp[j]=j===0?1:0;init.push({r:0,c:j,v:dp[j]});}
+    coins.forEach(function(c,i){var r=i+1;rows.push('加入 '+c+' 元');init.push({r:r,c:0,v:1});for(var j=1;j<=T;j++){
+      var old=dp[j],add=j>=c?dp[j-c]:0;dp[j]=old+add;
+      push(r,j,dp[j],j>=c?[[r-1,j],[r,j-c]]:[[r-1,j]],j<c?'金額 '+j+' < 面額 '+c+'，只能沿用不用它的 '+old+' 種。':'加入 '+c+' 元，算 '+j+' 元：不用它 '+old+' 種 ＋ 至少用一枚 '+add+' 種（'+(j-c)+' 元的每種組合加一枚 '+c+'）＝<b>'+dp[j]+'</b> 種。');
+    }});
+    var out=id==='d133'?'There are '+dp[T]+' ways to produce '+T+' cents change.':String(dp[T]);
+    return {rowLabels:rows,colLabels:labels,init:init,steps:steps,
+      intro:'① 數不計順序的組合。② ways[j] 只用已處理面額。③ ways[0]=1，其餘 0。④ 面額外層、金額遞增。範例面額 '+coins.join('、')+'，目標 '+T+'。',
+      outro:'⑤ ways['+T+']='+dp[T]+'。'+(id==='d119'?'這裡用小面額示範建表；擴大題目金額時，仍只建一次表，再查詢。':'⑥ 此筆輸出：'+out)};
+  }
+  if(id==='b184'||id==='b131'||id==='a522'){
+    var bars=id==='a522',W=bars?9:10;
+    var items=bars?[[3,0],[4,0],[6,0]]:id==='b131'?[[2,6],[3,12],[5,10]]:[[3,4],[4,5],[6,8]];
+    var dp=[];rows=['尚未選物品'];
+    for(j=0;j<=W;j++){labels.push(j);dp[j]=bars?j===0:0;init.push({r:0,c:j,v:bars?(dp[j]?'✓':'×'):0});}
+    items.forEach(function(item,i){var w=item[0],v=item[1],r=i+1;rows.push((bars?'棒':'物品')+(i+1));
+      // Copy previous row before descending updates, so every dependency is visible.
+      for(var j=0;j<=W;j++)push(r,j,bars?(dp[j]?'✓':'×'):dp[j],[[r-1,j]],'先保留不選第 '+(i+1)+' 個的結果：'+(bars?(dp[j]?'可湊出':'湊不出'):dp[j])+'。');
+      for(var j=W;j>=w;j--){var old=dp[j],from=dp[j-w],cand=bars?from:from+v;dp[j]=bars?(old||cand):Math.max(old,cand);
+        push(r,j,bars?(dp[j]?'✓':'×'):dp[j],[[r-1,j],[r-1,j-w]],bars?'長度 '+j+'：不拿此棒 '+(old?'可':'不可')+'；拿長 '+w+' 的棒，檢查舊狀態 '+(j-w)+' '+(from?'可':'不可')+' → <b>'+(dp[j]?'可湊出':'湊不出')+'</b>。':'容量 '+j+'：不選='+old+'；選重量 '+w+'、價值 '+v+' → 舊 dp['+(j-w)+']+'+v+'='+cand+'。取 max → <b>'+dp[j]+'</b>。');
+      }
+    });
+    return {rowLabels:rows,colLabels:labels,init:init,steps:steps,
+      intro:bars?'① 棒長 3、4、6，目標 9。② can[j] 表示能否恰好湊 j。③ 只有 can[0]=true。④ 每根棒僅用一次，因此內層遞減，來源屬於上一列。':'① 容量 10，三個物品 (重量,價值)：'+items.map(function(x){return '('+x.join(',')+')';}).join('、')+'。② dp[j] 是容量以內最大價值。③ 初值 0。④ 不選或選，取較大；每件僅用一次。'+(id==='b131'?'此例價格以 100 元為單位；重要度 3、4、2，價值=縮放後價格×重要度。':''),
+      outro:bars?'⑤ can[9]=true：3+6=9，輸出 YES。改用位元運算時，dp | (dp << 長度) 必須使用更新前的位元表。':'⑤ dp[10]=<b>'+dp[W]+'</b>。表中來源標在上一列；若壓縮成一列，必須由大到小，確保同一物品只用一次。'};
+  }
+  if(id==='d378'){
+    var g=[[1,3,1],[2,1,5],[4,2,1]],dp=[],prev=[];
+    for(i=0;i<3;i++){rows.push(i);labels.push(i);dp.push([]);prev.push([]);}
+    for(i=0;i<3;i++)for(j=0;j<3;j++){
+      var deps=[],up=i?dp[i-1][j]:Infinity,left=j?dp[i][j-1]:Infinity;
+      if(i)deps.push([i-1,j]);if(j)deps.push([i,j-1]);
+      dp[i][j]=i===0&&j===0?g[i][j]:Math.min(up,left)+g[i][j];
+      if(i||j)prev[i][j]=up<=left?[i-1,j]:[i,j-1];
+      push(i,j,dp[i][j],deps,i===0&&j===0?'③ 起點本身也要計入：dp[0][0]=1。':'④ ('+i+','+j+')：'+(i&&j?'min(上 '+up+', 左 '+left+')':i?'只有上方 '+up:'只有左方 '+left)+' + 本格 '+g[i][j]+' = <b>'+dp[i][j]+'</b>。');
+    }
+    var path=[],pos=[2,2];while(pos){path.push(pos);pos=prev[pos[0]][pos[1]];}
+    return {rowLabels:rows,colLabels:labels,init:init,steps:steps,path:path,sub:function(r,c){return '格值 '+g[r][c];},
+      intro:'① 小型地圖，示範只能往右或往下。② dp[i][j] 是包含本格的最小路徑和。先填起點，再逐列由左至右。',outro:'⑤ 終點 dp[2][2]=7。⑥ 沿綠格回推：1→2→1→2→1，總和 7。'};
+  }
+  if(id==='b840'){
+    var g=[[1,-2,3],[-1,4,-2],[3,-1,2]],best=-Infinity,rect=null,sums=[],endvals=[];
+    labels=[0,1,2];
+    for(var top=0;top<3;top++){
+      var col=[0,0,0];
+      for(var bottom=top;bottom<3;bottom++){
+        var r=rows.length;rows.push('列 '+top+'～'+bottom);endvals.push([]);
+        for(j=0;j<3;j++)col[j]+=g[bottom][j];sums.push(col.slice());
+        var end=-Infinity,start=0;
+        for(j=0;j<3;j++){
+          var prior=end,extend=j?prior+col[j]:-Infinity;
+          if(j===0||col[j]>extend){end=col[j];start=j;}else end=extend;
+          endvals[r][j]=end;
+          if(end>best){best=end;rect=[top,bottom,start,j];}
+          push(r,j,end,j?[[r,j-1]]:[], '③ 固定第 '+top+'～'+bottom+' 列，壓縮各欄成 ['+col.join(', ')+']。④ 算到第 '+j+' 欄：'+(j?'重新開始 '+col[j]+' 或接續 '+prior+'+'+col[j]+'='+extend:'第一欄自己開始 '+col[j])+'，此欄結尾最大和=<b>'+end+'</b>。⑤ 目前全域最佳='+best+'。');
+        }
+      }
+    }
+    return {rowLabels:rows,colLabels:labels,init:init,steps:steps,sub:function(r,c){return '欄和 '+sums[r][c];},
+      intro:'① 求非空連續矩形的最大和。② 枚舉上界與下界，將兩界之間的每一欄加總，再做一維 Kadane。地圖：['+g.map(function(row){return '['+row.join(', ')+']';}).join(', ')+']。每列代表一組上下界，大字是「到此欄結尾」的最大和。',
+      outro:'⑥ 最大矩形和='+best+'，列 '+rect[0]+'～'+rect[1]+'、欄 '+rect[2]+'～'+rect[3]+'。共有 6 組上下界 × 3 欄。一般 N×N 地圖：O(N³) 時間，欄壓縮與 Kadane 可用 O(N) 額外空間。全負數時也須選一格，不能把答案初值設 0。'};
+  }
+  throw new Error('未知示範題目 '+id);
+}
+function mountPracticeDemo(parent,id){
+  var panel=h('details','code practice-animation');
+  panel.innerHTML='<summary>'+id+' 逐步示範：播放／下一步</summary><div><p>使用小型教學範例展示本教材所列解法；資料不代表原題樣例，提交時請以原題規格為準。</p><div class="practice-table"></div></div>';
+  parent.appendChild(panel);
+  // Lazy initialization keeps the full course quick to load.
+  var mounted=false;
+  panel.addEventListener('toggle',function(){if(panel.open&&!mounted){stepTable($('.practice-table',panel),function(){var cfg = practiceConfig(id); cfg.ms = 1100; return cfg;});mounted=true;}});
+}
+
+var COIN_LESSONS = {"d904": "<h4>① 確認要找什麼</h4><p>找「最少需要幾枚」，同一種面額可以重複拿。以下用面額 1、4、5，目標 8 示範；這是教學用反例，實際面額與輸入格式請依題面。</p>\n<h4>② 先讓貪心試一次</h4><p>先拿最大：5 → 剩 3 → 1 + 1 + 1，共 4 枚。但 4 + 4 只需 2 枚，所以每次拿大的不一定最好。</p>\n<h4>③ 定義與初始化</h4><p><code>dp[j]</code> 是恰好湊出 j 元的最少枚數。<code>dp[0] = 0</code>；其他先設 ∞，代表還湊不出來。</p>\n<h4>④ 把問題拆成「最後拿哪枚」</h4><p>最後拿 c 元，前面就要湊 j − c 元，因此候選是 <code>dp[j-c] + 1</code>。試過所有 c ≤ j，取最小。</p>\n<h4>⑤ 從小金額算到大金額</h4><p>0～8 的結果依序是 <code>0, 1, 2, 3, 1, 1, 2, 3, 2</code>。算 8 時：拿 1 → dp[7]+1=4；拿 4 → dp[4]+1=2；拿 5 → dp[3]+1=4，所以 dp[8]=2。</p>\n<h4>⑥ 找回硬幣，說明答案</h4><p>8 選 4 → 剩 4；4 再選 4 → 剩 0，得到 4 + 4。上方「① 湊零錢」可逐步播放與切換面額。</p>\n<pre><code>def min_coins(coins, target):\n    dp = [float(\"inf\")] * (target + 1)\n    dp[0] = 0\n    for amount in range(1, target + 1):\n        for coin in coins:\n            if coin &lt;= amount:\n                dp[amount] = min(dp[amount], dp[amount - coin] + 1)\n    return dp[target]  # 若仍是 inf，表示無法恰好湊出\n\nprint(min_coins([1, 4, 5], 8))  # 教學範例：2</code></pre>\n<p>時間 O(面額種類數 × 目標金額)，空間 O(目標金額)。這是解法核心，並非尚未核對輸入格式的提交程式。</p>", "d133": "<h4>① 確認要數什麼</h4><p>面額 1、5、10、25、50，每種可重複使用，數不計順序的組合。1 + 10 與 10 + 1 是同一種。輸入多筆金額，直到 EOF。</p>\n<h4>② 定義與初始化</h4><p><code>ways[j]</code> 是「只用目前已處理面額」湊出 j 元的組合數。<code>ways[0] = 1</code>，因為什麼都不拿是一種方法；其他先設 0。</p>\n<h4>③ 拆成兩類，才能相加</h4><p>加入面額 c 後：不用 c 的方法（原 ways[j]）＋至少用一枚 c 的方法（目前 ways[j-c]，每種加上一枚 c）。因此 <code>ways[j] += ways[j-c]</code>。兩類不重疊，且涵蓋所有組合。</p>\n<h4>④ 面額放外層，金額由小到大</h4><p>先處理 1，再 5，再 10……每種組合在加入其最大面額的階段形成，避免把不同排列重複算。金額遞增，才能重用同面額。</p>\n<h4>⑤ 手算 11 元</h4><p>只有 1 元：1 種；加入 5 元：3 種；加入 10 元：ways[11] = 3 + ways[1] = 4。四種是 11 枚 1、1 枚 5 + 6 枚 1、2 枚 5 + 1 枚 1、1 枚 10 + 1 枚 1。</p>\n<h4>⑥ 先建表，再逐筆查詢</h4><p>原題金額範圍 0～30000；表只建一次，之後每筆直接取 ways[n]。Python 整數可容納答案；C++ 請用 long long。</p>\n<h4>⑦ 最後處理單複數格式</h4><p>1 種用 <code>There is only 1 way...</code>，其餘用 <code>There are ... ways...</code>；句尾有句點。0 元也有 1 種方法。</p>\n<pre><code>import sys\n\nLIMIT = 30000\nways = [0] * (LIMIT + 1)\nways[0] = 1\nfor coin in [1, 5, 10, 25, 50]:\n    for amount in range(coin, LIMIT + 1):\n        ways[amount] += ways[amount - coin]\n\nfor token in sys.stdin.read().split():\n    n = int(token)\n    count = ways[n]\n    if count == 1:\n        print(f\"There is only 1 way to produce {n} cents change.\")\n    else:\n        print(f\"There are {count} ways to produce {n} cents change.\")</code></pre>\n<p>建表 O(5 × 30000)，每筆查詢 O(1)，空間 O(30000)。<a href=\"https://onlinejudge.org/external/3/357.pdf\" target=\"_blank\" rel=\"noopener\">UVa 357 原題與輸出格式</a></p>", "d253": "<h4>① 先辨認與上一題相同的部分</h4><p>同樣使用 1、5、10、25、50，數不計順序的組合，每種面額不限枚數。差別在金額範圍與輸出：原題支援到 7489 元，每筆只印方法數。</p>\n<h4>② 定義與初始化</h4><p><code>ways[j]</code> 是只用已處理面額湊出 j 的組合數。<code>ways[0] = 1</code>，其餘 0。</p>\n<h4>③ 拆成不用與使用目前面額</h4><p>原本 ways[j] 是不用目前面額的組合；ways[j-c] 中每種加上一枚 c，就是至少用一枚 c 的組合。相加得到 <code>ways[j] += ways[j-c]</code>。</p>\n<h4>④ 逐種面額建表</h4><p>外層面額、內層金額遞增。例如處理 c=5、j=10 時，ways[10] = 1 + ways[5] = 1 + 2 = 3。此時 ways[5] 已包含一枚 5，所以兩枚 5 也會算到。</p>\n<h4>⑤ 用樣例驗算</h4><p>11 元：4 種。26 元：只用 1、5 有 6 種；加入 10 新增 4 + 2 種，合計 12；加入 25 再新增 ways[1]=1，合計 13；50 元大於目標，不影響答案。</p>\n<h4>⑥ 多筆查表，只印數字</h4><p>讀到 EOF，表只建一次。輸入 11、26，分別輸出 4、13，不加說明句。若輸入 0，輸出 1。</p>\n<pre><code>import sys\n\nLIMIT = 7489\nways = [0] * (LIMIT + 1)\nways[0] = 1\nfor coin in [1, 5, 10, 25, 50]:\n    for amount in range(coin, LIMIT + 1):\n        ways[amount] += ways[amount - coin]\n\nfor token in sys.stdin.read().split():\n    print(ways[int(token)])</code></pre>\n<p>建表 O(5 × 7489)，每筆查詢 O(1)，空間 O(7489)。<a href=\"https://onlinejudge.org/external/6/674.pdf\" target=\"_blank\" rel=\"noopener\">UVa 674 原題與樣例</a></p>"};
 var BASE = "https://zerojudge.tw/ShowProblem?problemid=";
 var PROBLEMS = {
   1: [
@@ -968,7 +1129,7 @@ var PROBLEMS = {
     { id: "d253", title: "00674 - Coin Change", focus: "同型；面額放外層 = 數組合" },
     { id: "d119", title: "有獎徵答：換零錢", focus: "面額多、金額到 50000" },
     { id: "b184", title: "5. 裝貨櫃問題", star: true, focus: "0/1 背包；內層由大到小" },
-    { id: "b131", title: "背包問題", focus: "再一題 0/1 背包" },
+    { id: "b131", title: "NOIP2006 2.开心的金明", focus: "0/1 背包；價值 = 價格 × 重要度" },
     { id: "a522", title: "12455 - Bars", focus: "能不能湊出？dp |= dp << m" }
   ],
   5: [
@@ -1016,6 +1177,13 @@ Object.keys(PROBLEMS).forEach(function (st) {
     if (p.star) $('.star', li).hidden = false;
     $('.focus', li).textContent = p.focus;
     $('input', li).setAttribute('aria-label', '標記 ' + p.id + ' 為已完成');
+    if (COIN_LESSONS[p.id]) {
+      var explanation = h('details', 'code coin-lesson');
+      explanation.id = 'lesson-' + p.id;
+      explanation.innerHTML = '<summary>' + p.id + ' 分解步驟與 Python 解法</summary><div>' + COIN_LESSONS[p.id] + '</div>';
+      $('.focus', li).after(explanation);
+    }
+    if (st === '4' || st === '5') mountPracticeDemo($('.focus', li).parentNode, p.id);
     ul.appendChild(li);
   });
 });
